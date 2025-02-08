@@ -24,6 +24,7 @@ import { GroupRelationList } from '../components/groupRelationList';
 import { MenuConnected } from '../components/menu';
 import { Navigation } from '../components/navigation';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import { EditorDrc } from './editorDrc';
 require('./calculator.scss');
 
 
@@ -34,7 +35,7 @@ type Props = {
 };
 
 type State = {
-	activeTab: 'relalg' | 'bagalg' | 'trc' | 'sql' | 'group',
+	activeTab: 'relalg' | 'bagalg' | 'trc' | 'drc' | 'sql' | 'group',
 	datasetModal: boolean,
 	relationModal: boolean,
 };
@@ -44,6 +45,7 @@ export class Calculator extends React.Component<Props, State> {
 	private refEditorRelalg = React.createRef<EditorRelalg>();
 	private refEditorBagalg = React.createRef<EditorBagalg>();
 	private refEditorTrc = React.createRef<EditorTrc>();
+	private refEditorDrc = React.createRef<EditorDrc>();
 	private refEditorSql = React.createRef<EditorSql>();
 	private refEditorGroup = React.createRef<EditorGroup>();
 
@@ -94,6 +96,8 @@ export class Calculator extends React.Component<Props, State> {
 				return this.refEditorBagalg;
 			case 'trc':
 				return this.refEditorTrc;
+			case 'drc':
+				return this.refEditorDrc;
 			case 'sql':
 				return this.refEditorSql;
 			case 'group':
@@ -201,6 +205,15 @@ example,  42
 							</NavItem>
 							<NavItem>
 								<NavLink
+									className={classnames({ active: activeTab === 'drc' })}
+									onClick={() => { this.setState({ activeTab: 'drc' }); }}
+								>
+									<span className="hideOnSM">DRC</span>
+									<span className="showOnSM">DRC</span>
+								</NavLink>
+							</NavItem>
+							<NavItem>
+								<NavLink
 									className={classnames({ active: activeTab === 'sql' })}
 									onClick={() => { this.setState({ activeTab: 'sql' }); }}
 								>
@@ -237,6 +250,12 @@ example,  42
 								<EditorTrc
 									group={group}
 									ref={this.refEditorTrc}
+								/>
+							</TabPane>
+							<TabPane tabId="drc">
+								<EditorDrc
+									group={group}
+									ref={this.refEditorDrc}
 								/>
 							</TabPane>
 							<TabPane tabId="sql">

@@ -17,7 +17,8 @@ export {
 	relalgFromRelalgAstNode,
 	relalgFromRelalgAstRoot,
 	relalgFromSQLAstRoot,
-	relalgFromTRCAstRoot
+	relalgFromTRCAstRoot,
+	relalgFromDRCAstRoot
 } from './translate/relalgFromAst';
 export { replaceVariables } from './translate/replaceVariables';
 export { textFromGroupAstRoot, textFromRelalgAstNode, textFromRelalgAstRoot } from './translate/textFromAst';
@@ -220,6 +221,30 @@ export function parseTRCSelect(text: string): trcAst.TRC_Expr {
 
 export function parseTRCDump(text: string): relalgAst.GroupRoot {
 	return pegParserTrc.parse(
+		text,
+		{
+			startRule: 'dbDumpStart',
+			tracer: undefined,
+		},
+	);
+}
+
+const pegParserDrc = require('./parser/grammar_drc.pegjs') as any;
+
+export function parseDRCSelect(text: string): drcAst.DRC_Expr {
+
+	return pegParserDrc.parse(
+		text,
+		{
+			startRule: 'start',
+			tracer: undefined,
+			i18n,
+		},
+	);
+}
+
+export function parseDRCDump(text: string): relalgAst.GroupRoot {
+	return pegParserDrc.parse(
 		text,
 		{
 			startRule: 'dbDumpStart',
