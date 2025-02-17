@@ -60,12 +60,7 @@ export class EditorTrc extends React.Component<Props, State> {
 				execFunction={(self: EditorBase, text: string, offset) => {
 					self.historyAddEntry(text);
 
-					console.log('TEXT SQL: ', text)
-
 					const ast = parseTRCSelect(text);
-
-					console.log('PARSED TRC AST: ', ast)
-
 					const root = relalgFromTRCAstRoot(ast, relations)
 
 					root.check()
@@ -84,9 +79,9 @@ export class EditorTrc extends React.Component<Props, State> {
 				}}
 				tab="trc"
 				linterFunction={(self: EditorBase, editor: CodeMirror.Editor, text: string) => {
-					// TODO: implement proper linter function, for now it just tries to
-					// parse the text and shows the error if it fails on the editor!
-					const trcAst = parseTRCSelect(text)
+					const ast = parseTRCSelect(text)
+					const root = relalgFromTRCAstRoot(ast, relations)
+					root.check()
 
 					// replace text (text-magic)
 					if (editor.getDoc().somethingSelected() === false) {

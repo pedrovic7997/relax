@@ -3,11 +3,20 @@ declare namespace trcAst {
 	type Quantifier = 'exists' | 'forAll'
 	type LogicalOperator = 'or' | 'and' | 'implies'
 
+	interface CodeInfo {
+		location: {
+			start: { offset: number, line: number, column: number },
+			end: { offset: number, line: number, column: number },
+		},
+		text: string
+	}
+
 	interface TRC_Expr {
 		type: 'TRC_Expr',
 		variables: string[],
-		projections: Projection[]
-		formula: LogicalExpression
+		projections: Projection[],
+		formula: LogicalExpression,
+		codeInfo: CodeInfo
 	}
 
 	type Projection = (relalgAst.columnName | relalgAst.namedColumnExpr)[]
@@ -16,35 +25,41 @@ declare namespace trcAst {
 		type: 'LogicalExpression',
 		left: AttributeReference | LogicalExpression,
 		operator: LogicalOperator,
-		right: LogicalExpression | QuantifiedExpression | Predicate
+		right: LogicalExpression | QuantifiedExpression | Predicate,
+		codeInfo: CodeInfo
 	}
 
 	interface RelationPredicate {
 		type: 'RelationPredicate',
 		relation: string,
-		variable: string 
+		variable: string,
+		codeInfo: CodeInfo
 	}
 
 	interface Predicate {
 		type: 'Predicate',
 		condition: relalgAst.valueExpr
+		codeInfo: CodeInfo,
 	}
 
 	interface AttributeReference {
 		type: 'AttributeReference',
 		variable: string,
-		attribute: string
+		attribute: string,
+		codeInfo: CodeInfo,
 	}
 
 	interface QuantifiedExpression {
 		type: 'QuantifiedExpression',
 		quantifier: Quantifier,
 		variable: string,
-		formula: LogicalExpression 
+		formula: LogicalExpression,
+		codeInfo: CodeInfo,
 	}
 
 	interface Negation {
 		type: 'Negation',
-		formula: LogicalExpression
+		formula: LogicalExpression,
+		codeInfo: CodeInfo,
 	}
 }

@@ -430,6 +430,71 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 		return makeValueExpr('boolean', func, args)
 	}
 
+	function checkUnboundRelationPredicates(root: any) {
+		const allRelPredicates = getAllRelationPredicates(root)
+		const tupleVariables = getAllTupleVariables(root)
+		const hasUnboundVariable = allRelPredicates.length > tupleVariables.length
+
+		if (hasUnboundVariable) {
+			throw new ExecutionError(i18n.t('db.messages.translate.error-trc-unbound-variable'));
+		}
+	}
+
+	function getAllTupleVariables(root: any) {
+		let vars: string[] = []
+
+		function rec(root: any) {
+			switch (root.type) {
+				case 'TRC_Expr': {
+					vars.push(...root.variables)
+					return rec(root.formula)
+				}
+				case 'RelationPredicate': return 
+				case 'Negation': return rec(root.formula)
+				case 'QuantifiedExpression': {
+					vars.push(root.variable)
+					return rec(root.formula)
+				}
+				case 'LogicalExpression': {
+					rec(root.left)
+					rec(root.right)
+					return
+				}
+				default: return null
+			}
+		}
+		
+		rec(root)
+
+		return vars
+	}
+
+	function getAllRelationPredicates(root: any) {
+		let relPreds: any = []
+
+		function rec(root: any) {
+			switch (root.type) {
+				case 'TRC_Expr': return rec(root.formula)
+				case 'RelationPredicate': {
+					relPreds.push(root)
+					return null
+				}
+				case 'Negation': return rec(root.formula)
+				case 'QuantifiedExpression': return rec(root.formula)
+				case 'LogicalExpression': {
+					rec(root.left)
+					rec(root.right)
+					return
+				}
+				default: return null
+			}
+		}
+		
+		rec(root)
+
+		return relPreds
+	}
+
 	function getRelationPredicate(root: any, tupleVar: string, scopeChanges = 0): trcAst.RelationPredicate | null {
 		// NOTE: this represents that the scope has changed, so it doesn't make sense to keep searching
 		if (scopeChanges >= 2) {
@@ -452,7 +517,11 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 
 				// NOTE: if more than one relationPredicate was encountered
 				if (left && right) {
-					throw new Error('Cannot define RelationPredicate more than once per scope!')
+					throw new ExecutionError(
+						i18n.t('db.messages.translate.error-relation-predicate-defined-twice',
+						{ variable: right.variable }),
+						right.codeInfo
+					);
 				}
 
 				return left ?? right
@@ -483,7 +552,11 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 	function handleRenameRelation(nRaw: any, variable: string): RANode {
 		const relationPredicate = getRelationPredicate(nRaw, variable)
 		if (!relationPredicate) {
-			throw new Error('Relation predicate must be defined!')
+			throw new ExecutionError(
+				i18n.t('db.messages.translate.error-relation-predicate-not-found',
+				{ variable }),
+				nRaw.codeInfo
+			);
 		}
 
 		const rel = relations[relationPredicate.relation].copy()
@@ -494,7 +567,7 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 		return new RenameRelation(rel, relationPredicate.variable)
 	}
 
-	function handleTupleVariables(nRaw: any): RANode {
+	function handleTupleVariables(nRaw: trcAst.TRC_Expr): RANode {
 		if (nRaw.variables.length <= 1) {
 			return handleRenameRelation(nRaw, nRaw.variables[0])
 		}
@@ -510,11 +583,15 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 	function getAllColumns(nRaw: any, variable: string): Column[] {
 		const pred = getRelationPredicate(nRaw, variable)
 		if (!pred) {
-			throw new Error('Relation predicate must be defined!')
+			throw new ExecutionError(
+				i18n.t('db.messages.translate.error-relation-predicate-not-found',
+				{ variable }),
+				nRaw.codeInfo
+			);
 		}
 
 		const rel = relations[pred.relation].copy() as Relation
-		if (!rel) throw new Error("Cannot find relation!")
+		if (!rel) throw new Error(`Cannot find relation "${pred.relation}"`)
 
 		const cols = rel.getSchema().getColumns()
 		cols.forEach(c => c.setRelAlias(pred.variable))
@@ -523,6 +600,10 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 	}
 
 	function rec(nRaw: trcAst.TRC_Expr | any, baseRel: RANode | null = null, negated: boolean = false): any {
+		if (nRaw.type === 'TRC_Expr') {
+			checkUnboundRelationPredicates(nRaw)
+		}
+
 		switch (nRaw.type) {
 			case 'TRC_Expr': {
 				const projections = nRaw.projections.flatMap((e: any) => {
@@ -556,7 +637,11 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 
 						const relationPredicate = getRelationPredicate(nRaw, nRaw.variable)
 						if (!relationPredicate) {
-							throw new Error('Relation predicate must be defined!')
+							throw new ExecutionError(
+								i18n.t('db.messages.translate.error-relation-predicate-not-found',
+								{ variable: nRaw.variable }),
+								nRaw.codeInfo
+							);
 						}
 
 						const relation = relations[relationPredicate.relation].copy()
@@ -709,7 +794,14 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 
 			case 'Negation': {
 				if (nRaw.formula.type === 'RelationPredicate') {
-					throw new Error('Cannot negate RelationPredicate (unsafe formula)')
+					throw new ExecutionError(
+						i18n.t('db.messages.translate.error-trc-unsafe-formula',
+						{ 
+							relation: nRaw.formula.relation,
+							variable: nRaw.formula.variable 
+						}),
+						nRaw.codeInfo
+					);
 				}
 				return rec(nRaw.formula, baseRel, !negated)
 			}

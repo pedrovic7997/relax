@@ -1,26 +1,26 @@
 {
   function createRelationPredicate(relation, variable) {
-    return { type: 'RelationPredicate', relation, variable };
+    return { type: 'RelationPredicate', relation, variable, codeInfo: getNodeInfo() };
   }
 
   function createPredicate(condition) {
-    return { type: 'Predicate', condition };
+    return { type: 'Predicate', condition, codeInfo: getCodeInfo() };
   }
 
   function createLogicalExpression(left, operator, right) {
-    return { type: 'LogicalExpression', left, operator, right };
+    return { type: 'LogicalExpression', left, operator, right, codeInfo: getCodeInfo() };
   }
 
   function createQuantifiedExpression(quantifier, variable, formula) {
-    return { type: 'QuantifiedExpression', quantifier, variable, formula };
+    return { type: 'QuantifiedExpression', quantifier, variable, formula, codeInfo: getCodeInfo() };
   }
 
   function createNegation(formula) {
-    return { type: 'Negation', formula };
+    return { type: 'Negation', formula, codeInfo: getCodeInfo() };
   }
 
 	function createTrcRoot(variables, formula, projections) {
-    return { type: 'TRC_Expr', variables, formula, projections };
+    return { type: 'TRC_Expr', variables, formula, projections, codeInfo: getCodeInfo() };
 	}
 
 	function getCodeInfo() {
