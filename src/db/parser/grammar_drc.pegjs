@@ -1,6 +1,6 @@
 {
-	function createRelationPredicate(relation, variable) {
-		return { type: 'RelationPredicate', relation, variable };
+	function createRelationPredicate(relation, variables) {
+		return { type: 'RelationPredicate', relation, variables };
 	}
 
 	function createPredicate(condition) {
@@ -83,16 +83,10 @@ all
     }
 
 DRC_Expr
-  = '{' _ proj: (listOfNamedColumnExpressions / listOfColumns) _ '|' _ formula:Formula _ '}' 
+  = '{' _ '<' _ proj: listOfColumns _ '>' _ '|' _ formula:Formula _ '}' 
 	{
 		const nonUniquevariables = proj.flatMap(p => {
-			if (p.type === 'namedColumnExpr' && p.child.func === 'columnValue') {
-				return [p.child.args[1]]
-			}
-			if (p.type === 'namedColumnExpr') {
-				return p.child.args.map(a => a.args[1])
-			}
-			return [p.relAlias ? p.relAlias : p.name]
+			return [p.name]
 		})
 		.filter(v => v)
 
@@ -143,13 +137,15 @@ BaseFormula
     }
 
 RelationPredicate
-  = relation:Relation _ '(' _ variable:Variable _ ')'
+  = '<' _ a:Variable b:( _ ',' _ Variable )* _ '>' _ ('in'i / '∈') _ relation:Relation
     {
-      return createRelationPredicate(relation, variable);
-    }
-  / variable:Variable _ ('in'i / '∈') _ relation:Relation
-    {
-      return createRelationPredicate(relation, variable);
+      var t = [a];
+      if(b !== null){
+        for(var i in b){
+          t.push(b[i][3]);
+        }
+      }
+      return createRelationPredicate(relation, t);
     }
 
 Predicate
@@ -767,68 +763,12 @@ unqualifiedColumnName
 	}
 
 columnName
-= relAlias:(relationName '.')? name:unqualifiedColumnName
+= name:unqualifiedColumnName
 	{
-		if(relAlias != null)
-			relAlias = relAlias[0];
-
 		return {
 			type: 'columnName',
 			name: name,
-			relAlias: relAlias
 		};
-	}
-/ relAlias:(relationName '.')? '[' _ index:$[0-9]+ _ ']'
-	{
-		if(relAlias != null)
-			relAlias = relAlias[0];
-
-		return {
-			type: 'columnName',
-			name: parseInt(index, 10),
-			relAlias: relAlias
-		};
-	}
-
-namedColumnExpr
-= a:valueExpr arrowRight dst:unqualifiedColumnName
-	{
-		return {
-			type: 'namedColumnExpr',
-			name: dst,
-			relAlias: null,
-			child: a,
-
-			codeInfo: getCodeInfo()
-		};
-	}
-/ dst:unqualifiedColumnName arrowLeft a:valueExpr
-	{
-		return {
-			type: 'namedColumnExpr',
-			name: dst,
-			relAlias: null,
-			child: a,
-
-			codeInfo: getCodeInfo()
-		};
-	}
-/ a:columnName
-	{
-		return a;
-	}
-
-// list of columns (kd.id, kd.name, test) e.g. for the projection
-listOfNamedColumnExpressions
-= a:namedColumnExpr b:(_ ',' _ namedColumnExpr)*
-	{
-		var t = [a];
-		if(b !== null){
-			for(var i in b){
-				t.push(b[i][3]);
-			}
-		}
-		return t;
 	}
 
 listOfColumns

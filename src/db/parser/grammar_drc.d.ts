@@ -7,7 +7,7 @@ declare namespace drcAst {
 		type: 'DRC_Expr',
 		variables: string[],
 		projections: Projection[]
-		formula: LogicalExpression
+		formula: LogicalExpression | RelationPredicate
 	}
 
 	type Projection = (relalgAst.columnName | relalgAst.namedColumnExpr)[]
@@ -22,7 +22,7 @@ declare namespace drcAst {
 	interface RelationPredicate {
 		type: 'RelationPredicate',
 		relation: string,
-		variable: string 
+		variables: string[] 
 	}
 
 	interface Predicate {
