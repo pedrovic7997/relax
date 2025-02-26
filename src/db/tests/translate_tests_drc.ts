@@ -9,35 +9,47 @@
 import { Relation } from 'db/exec/Relation';
 import { RANode } from '../exec/RANode';
 import * as relalgjs from '../relalg';
+import { Schema } from '../exec/Schema';
 
 
-const srcTableR: Relation = relalgjs.executeRelalg(`{
-	R.a, R.b, R.c
+const srcSchemaR: Schema = new Schema();
+srcSchemaR.addColumn('a', null, 'number');
+srcSchemaR.addColumn('b', null, 'string');
+srcSchemaR.addColumn('c', null, 'string');
 
-	1,    a,   d
-	3,    c,   c
-	4,    d,   f
-	5,    d,   b
-	6,    e,   f
-	1000, e,   k
-}`, {}) as Relation;
-const srcTableS: Relation = relalgjs.executeRelalg(`{
-	S.b, S.d
+const srcTableR: Relation = new Relation('R').setSchema(srcSchemaR);
+srcTableR.addRows([
+[1,    'a',   'd'],
+[3,    'c',   'c'],
+[4,    'd',   'f'],
+[5,    'd',   'b'],
+[6,    'e',   'f'],
+[1000, 'e',   'k']]);
 
-	a,   100
-	b,   300
-	c,   400
-	d,   200
-	e,   150
-}`, {}) as Relation;
-const srcTableT: Relation = relalgjs.executeRelalg(`{
-	T.b, T.d
+const srcSchemaS: Schema = new Schema();
+srcSchemaS.addColumn('b', null, 'string');
+srcSchemaS.addColumn('d', null, 'number');
 
-	a,   100
-	d,   200
-	f,   400
-	g,   120
-}`, {}) as Relation;
+const srcTableS: Relation = new Relation('S').setSchema(srcSchemaS);
+srcTableS.addRows([
+  ['a', 100],
+  ['b', 300],
+  ['c', 400],
+  ['d', 200],
+  ['e', 150]
+]);
+
+const srcSchemaT: Schema = new Schema();
+srcSchemaT.addColumn('b', null, 'string');
+srcSchemaT.addColumn('d', null, 'number');
+
+const srcTableT: Relation = new Relation('T').setSchema(srcSchemaT);
+srcTableT.addRows([
+  ['a', 100],
+  ['d', 200],
+  ['f', 400],
+  ['g', 120]
+]);
 
 const relations: {
 	R: Relation,
@@ -99,41 +111,41 @@ QUnit.module('translate drc ast to relational algebra', () => {
 			});
 		});
 
-		QUnit.module('Multiple tuple variables', () => {});
+		// QUnit.module('Multiple tuple variables', () => {});
 	});
 
-	QUnit.module('Formulae ordering', () => {});
+	// QUnit.module('Formulae ordering', () => {});
 
-	QUnit.module('Logical implication', () => {
+	// QUnit.module('Logical implication', () => {
 
-		QUnit.module('Negation', () => {});
-	});
+	// 	QUnit.module('Negation', () => {});
+	// });
 
-	QUnit.module('Logical biconditional (equivalence)', () => {
-		QUnit.module('Negation', () => {});
-	});
+	// QUnit.module('Logical biconditional (equivalence)', () => {
+	// 	QUnit.module('Negation', () => {});
+	// });
 
-	QUnit.module('Predicates', () => {
-		QUnit.module('Conjunction', () => {
-			QUnit.module('Negation', () => {});
-		});
+	// QUnit.module('Predicates', () => {
+	// 	QUnit.module('Conjunction', () => {
+	// 		QUnit.module('Negation', () => {});
+	// 	});
 
-		QUnit.module('Disjunction', () => {
-			QUnit.module('Negation', () => {});
-		});
+	// 	QUnit.module('Disjunction', () => {
+	// 		QUnit.module('Negation', () => {});
+	// 	});
 
-		QUnit.module('Exclusive disjunction', () => {});
+	// 	QUnit.module('Exclusive disjunction', () => {});
 
-		QUnit.module('Negation', () => {})
+	// 	QUnit.module('Negation', () => {})
 
-		QUnit.module('Comparison', () => {})
-	});
+	// 	QUnit.module('Comparison', () => {})
+	// });
 
-	QUnit.module('existencial quantifier operator(∃)', () => {
-		QUnit.module('Negation', () => {});
-	});
+	// QUnit.module('existencial quantifier operator(∃)', () => {
+	// 	QUnit.module('Negation', () => {});
+	// });
 
-	QUnit.module('universal quantifier operator(∀)', () => {
-		QUnit.module('Negation', () => {});
-	});
+	// QUnit.module('universal quantifier operator(∀)', () => {
+	// 	QUnit.module('Negation', () => {});
+	// });
 });
