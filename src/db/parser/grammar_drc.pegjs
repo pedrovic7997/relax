@@ -619,7 +619,7 @@ valueExprColumn
 			type: 'valueExpr',
 			datatype: 'null',
 			func: 'columnValue',
-			args: [a.name, a.relAlias],
+			args: [a.name],
 
 			codeInfo: getCodeInfo()
 		};

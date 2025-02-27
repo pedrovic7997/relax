@@ -1160,7 +1160,7 @@ export function relalgFromSQLAstRoot(astRoot: sqlAst.rootSql | any, relations: {
 function recValueExpr(n: relalgAst.valueExpr | sqlAst.valueExpr): ValueExpr.ValueExpr {
 	let node: ValueExpr.ValueExpr;
 	if (n.datatype === 'null' && n.func === 'columnValue') {
-		node = new ValueExpr.ValueExprColumnValue(n.args[0], n.args[1]);
+		node = new ValueExpr.ValueExprColumnValue(n.args[0], null);
 	}
 	else {
 		switch (n.datatype) {
