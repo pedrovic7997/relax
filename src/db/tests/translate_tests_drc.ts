@@ -19,12 +19,13 @@ srcSchemaR.addColumn('c', null, 'string');
 
 const srcTableR: Relation = new Relation('R').setSchema(srcSchemaR);
 srcTableR.addRows([
-[1,    'a',   'd'],
-[3,    'c',   'c'],
-[4,    'd',   'f'],
-[5,    'd',   'b'],
-[6,    'e',   'f'],
-[1000, 'e',   'k']]);
+	[1,    'a',   'd'],
+	[3,    'c',   'c'],
+	[4,    'd',   'f'],
+	[5,    'd',   'b'],
+	[6,    'e',   'f'],
+	[1000, 'e',   'k']
+]);
 
 const srcSchemaS: Schema = new Schema();
 srcSchemaS.addColumn('b', null, 'string');
@@ -32,11 +33,11 @@ srcSchemaS.addColumn('d', null, 'number');
 
 const srcTableS: Relation = new Relation('S').setSchema(srcSchemaS);
 srcTableS.addRows([
-  ['a', 100],
-  ['b', 300],
-  ['c', 400],
-  ['d', 200],
-  ['e', 150]
+	['a', 100],
+	['b', 300],
+	['c', 400],
+	['d', 200],
+	['e', 150]
 ]);
 
 const srcSchemaT: Schema = new Schema();
@@ -45,10 +46,10 @@ srcSchemaT.addColumn('d', null, 'number');
 
 const srcTableT: Relation = new Relation('T').setSchema(srcSchemaT);
 srcTableT.addRows([
-  ['a', 100],
-  ['d', 200],
-  ['f', 400],
-  ['g', 120]
+	['a', 100],
+	['d', 200],
+	['f', 400],
+	['g', 120]
 ]);
 
 const relations: {
@@ -78,7 +79,7 @@ function exec_ra(query: string) {
 QUnit.module('translate drc ast to relational algebra', () => {
 
 	QUnit.module('Projection', () => {
-		QUnit.module('All columns', () => {
+		QUnit.module('Single relation', () => {
 			QUnit.test('test project all columns', (assert) => {
 				const query = '{ <a,b,c> | <a,b,c> in R }';
 				const root = exec_drc(query);
@@ -101,17 +102,37 @@ QUnit.module('translate drc ast to relational algebra', () => {
 			});
 
 			QUnit.test('test project some columns', (assert) => {
-				const queryTrc = '{ <y> | <x,y,z> ∈ R}';
+				const queryDrc = '{ <y> | <x,y,z> ∈ R}';
 				const queryRa = 'π R.y ( ρ x←a, y←b, z←c R ⋉ R ) ';
 
-				const resultTrc = exec_drc(queryTrc).getResult();
+				const resultDrc = exec_drc(queryDrc).getResult();
 				const resultRa = exec_ra(queryRa).getResult();
 
-				assert.deepEqual(resultRa, resultTrc);
+				assert.deepEqual(resultRa, resultDrc);
 			});
 		});
 
-		// QUnit.module('Multiple tuple variables', () => {});
+		QUnit.module('Multiple relations', () => {
+			QUnit.test('test project all columns', (assert) => {
+				const queryDrc = '{ <x,y,z,r,s> | <x,y,z> in R and <r,s> in S }';
+				const queryRa = 'ρ x←a, y←b, z←c R ⨯ ρ r←b, s←d S'
+
+				const resultDrc = exec_drc(queryDrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultDrc, resultRa);
+			});
+
+			QUnit.test('test project some columns', (assert) => {
+				const queryDrc = '{ <x,r> | <x,y,z> in R and <r,s> in S }';
+				const queryRa = 'π R.x, S.r ( ρ x←a, y←b, z←c R ⨯ ρ r←b, s←d S )'
+
+				const resultDrc = exec_drc(queryDrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultDrc, resultRa);
+			});
+		});
 	});
 
 	// QUnit.module('Formulae ordering', () => {});
