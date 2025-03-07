@@ -121,33 +121,6 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		formula
 	})
 
-	function handleRenameRelation(nRaw: any, variable: string): RANode {
-		const relationPredicate = getRelationPredicate(nRaw, variable)
-		if (!relationPredicate) {
-			throw new Error('Relation predicate must be defined!')
-		}
-
-		const rel = relations[relationPredicate.relation].copy()
-		if (!rel) {
-			throw new Error("Could not get the tuple relation by its reference!")
-		}
-
-		return new RenameRelation(rel, relationPredicate.variable)
-	}
-
-	function handleTupleVariables(nRaw: any): RANode {
-		if (nRaw.variables.length <= 1) {
-			return handleRenameRelation(nRaw, nRaw.variables[0])
-		}
-
-		const renamedRelations = nRaw.variables.map((variable: string) => handleRenameRelation(nRaw, variable))
-		const base = renamedRelations.reduce((rel1: RANode, rel2: RANode) => {
-			return new CrossJoin(rel1, rel2)
-		})
-
-		return base
-	}
-
 	function handleDomainVariables(nRaw: any): RANode {
 		const relationPredicates: temporaryRelationPredicate[] = nRaw.variables.map((v: string) => {
 			var relationPredicate = getRelationPredicate(nRaw, v)
@@ -159,35 +132,37 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			return relationPredicate
 		})
 
-		const uniqueRelationsPredicates = [...new Set(relationPredicates)]
-		const relationsRef = uniqueRelationsPredicates.map((rp: temporaryRelationPredicate) => relations[rp.relation].copy())
+		const uniqueRelationPredicates = [...new Set(relationPredicates)]
+		const relationsRef = uniqueRelationPredicates.map((rp: temporaryRelationPredicate) => relations[rp.relation].copy())
 
-		if (uniqueRelationsPredicates.length <= 1) {
-			return handleRenameColumns(relationsRef[0],uniqueRelationsPredicates)
+		if (uniqueRelationPredicates.length <= 1) {
+			var relationPredicate = uniqueRelationPredicates[0];
+			return handleRenameColumns(relations[relationPredicate.relation].copy(),relationPredicate)
 		}
 
-		const columnsRenamed = relationsRef.map(r => handleRenameColumns(r, uniqueRelationsPredicates))
+		const columnsRenamed = uniqueRelationPredicates.map((rp: temporaryRelationPredicate) => {
+			var equivalentRelation = relations[rp.relation].copy();
+			if (equivalentRelation === undefined)
+				throw new Error('It was not possible to find the relation match for: ' + rp.relation);
+			return handleRenameColumns(equivalentRelation, rp);
+		});
 
 		return columnsRenamed.reduce((rel1: RANode, rel2: RANode) => {
 			return new CrossJoin(rel1, rel2)
 		})
 	}
 
-	function handleRenameColumns(r: Relation, uniqueRelationsPredicates: temporaryRelationPredicate[]): RANode {
+	function handleRenameColumns(r: Relation, equivalentRelPredicate: temporaryRelationPredicate): RANode {
 		var renamingColumns = new RenameColumns(r);
 
 		var relColumns = r.getSchema().getColumns();
 
-		var relPredEquivalent = uniqueRelationsPredicates.find((rp: temporaryRelationPredicate) => rp.relation === r.getName());
-		if (relPredEquivalent === undefined)
-			throw new Error('It was not possible to find the relation predicate match for: ' + r.getName());
-
-		if (relColumns.length !== relPredEquivalent.variables.length)
+		if (relColumns.length !== equivalentRelPredicate.variables.length)
 			throw new Error('Number of domain variables in relation predicate does not match the number of columns in relation');
 
 		relColumns.forEach((col, index) => {
 			var oldColumnName = col.getName();
-			var newColumnName = relPredEquivalent!.variables.at(index);
+			var newColumnName = equivalentRelPredicate!.variables.at(index);
 			renamingColumns.addRenaming(newColumnName!, oldColumnName, null);
 		});
 
@@ -443,7 +418,7 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 	function getAllTupleVariables(root: any) {
 		let vars: string[] = []
 
-		function rec(root: any) {
+		function rec(root: any): any {
 			switch (root.type) {
 				case 'TRC_Expr': {
 					vars.push(...root.variables)
@@ -472,7 +447,7 @@ export function relalgFromTRCAstRoot(astRoot: trcAst.TRC_Expr | null, relations:
 	function getAllRelationPredicates(root: any) {
 		let relPreds: any = []
 
-		function rec(root: any) {
+		function rec(root: any): any {
 			switch (root.type) {
 				case 'TRC_Expr': return rec(root.formula)
 				case 'RelationPredicate': {
