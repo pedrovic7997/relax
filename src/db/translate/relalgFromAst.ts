@@ -56,6 +56,42 @@ type temporaryRelationPredicate = trcAst.RelationPredicate & drcAst.RelationPred
 
 export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations: { [key: string]: Relation }): RANode 
 {
+	function recValueExpr(n: relalgAst.valueExpr | sqlAst.valueExpr): ValueExpr.ValueExpr {
+		let node: ValueExpr.ValueExpr;
+		if (n.datatype === 'null' && n.func === 'columnValue') {
+			node = new ValueExpr.ValueExprColumnValue(n.args[0], null);
+		}
+		else {
+			switch (n.datatype) {
+				case 'string':
+				case 'number':
+				case 'boolean':
+				case 'date':
+				case 'null': // all with unknown type
+					const tmp = [];
+					for (let i = 0; i < n.args.length; i++) {
+						if (n.func === 'constant') {
+							tmp.push(n.args[i]);
+						}
+						else {
+							tmp.push(recValueExpr(n.args[i]));
+						}
+					}
+	
+					node = new ValueExpr.ValueExprGeneric(n.datatype, n.func, tmp);
+					break;
+				default:
+					throw new Error('not implemented yet');
+			}
+		}
+	
+		node.setCodeInfoObject(n.codeInfo);
+		if (n.wrappedInParentheses === true) {
+			node.setWrappedInParentheses(true);
+		}
+		return node;
+	}
+
 	type DataType = 'string' | 'boolean' | 'number' | 'null' | 'date'
 	function makeValueExpr(datatype: DataType, func: relalgAst.ValueExprFunction, args: any[]): relalgAst.valueExpr {
 		return {
@@ -133,7 +169,6 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		})
 
 		const uniqueRelationPredicates = [...new Set(relationPredicates)]
-		const relationsRef = uniqueRelationPredicates.map((rp: temporaryRelationPredicate) => relations[rp.relation].copy())
 
 		if (uniqueRelationPredicates.length <= 1) {
 			var relationPredicate = uniqueRelationPredicates[0];
@@ -1135,7 +1170,7 @@ export function relalgFromSQLAstRoot(astRoot: sqlAst.rootSql | any, relations: {
 function recValueExpr(n: relalgAst.valueExpr | sqlAst.valueExpr): ValueExpr.ValueExpr {
 	let node: ValueExpr.ValueExpr;
 	if (n.datatype === 'null' && n.func === 'columnValue') {
-		node = new ValueExpr.ValueExprColumnValue(n.args[0], null);
+		node = new ValueExpr.ValueExprColumnValue(n.args[0], n.args[1]);
 	}
 	else {
 		switch (n.datatype) {
