@@ -10,6 +10,7 @@ import { Relation } from 'db/exec/Relation';
 import { RANode } from '../exec/RANode';
 import * as relalgjs from '../relalg';
 import { Schema } from '../exec/Schema';
+import { assert } from 'node_modules/@types/qunit';
 
 
 const srcSchemaR: Schema = new Schema();
@@ -132,6 +133,16 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 				assert.deepEqual(resultDrc, resultRa);
 			});
+
+			QUnit.test('test project repeated relations', (assert) => {
+				const queryDrc = '{ <x,y,z,a,b,c> | <x,y,z> in R and <a,b,c> in R }';
+				const queryRa = 'π R.x, R.y, R.z, R.a, R.b, R.c ( ρ x←a, y←b, z←c R ⨯ ρ a←a, b←b, c←c R )'
+
+				const resultDrc = exec_drc(queryDrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultDrc, resultRa);
+			});
 		});
 	});
 
@@ -146,10 +157,19 @@ QUnit.module('translate drc ast to relational algebra', () => {
 	// 	QUnit.module('Negation', () => {});
 	// });
 
-	// QUnit.module('Predicates', () => {
-	// 	QUnit.module('Conjunction', () => {
+	QUnit.module('Predicates', () => {
+		QUnit.module('Conjunction', () => {
+			QUnit.test('Multiple relations with binding predicate', assert => {
+				const queryDrc = '{ <x,y,z,r,s> | <x,y,z> in R and <r,s> in S and y=r}';
+				const queryRa = 'π R.x, R.y, R.z, S.r, S.s ( ( ρ x←a, y←b, z←c R ⨯ ρ r←b, s←d S ) ∩ σ y = r ( ρ x←a, y←b, z←c R ⨯ ρ r←b, s←d S ) ) ';
+
+				const resultDrc = exec_drc(queryDrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultDrc, resultRa);
+			})
 	// 		QUnit.module('Negation', () => {});
-	// 	});
+		});
 
 	// 	QUnit.module('Disjunction', () => {
 	// 		QUnit.module('Negation', () => {});
@@ -160,7 +180,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 	// 	QUnit.module('Negation', () => {})
 
 	// 	QUnit.module('Comparison', () => {})
-	// });
+	});
 
 	// QUnit.module('existencial quantifier operator(∃)', () => {
 	// 	QUnit.module('Negation', () => {});
