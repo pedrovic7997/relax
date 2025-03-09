@@ -146,16 +146,90 @@ QUnit.module('translate drc ast to relational algebra', () => {
 		});
 	});
 
-	// QUnit.module('Formulae ordering', () => {});
+	QUnit.module('Formulae ordering', () => {
+		QUnit.test('relation predicate in the first position', (assert) => {
+			const queryTrc = "{ <a,b,c> | <a,b,c> in R and abs(a) > 0 }";
+			const queryRa = "sigma abs(a)>0 (R)";
 
-	// QUnit.module('Logical implication', () => {
+			const resultTrc = exec_drc(queryTrc).getResult()
+			const resultRa = exec_ra(queryRa).getResult();
 
-	// 	QUnit.module('Negation', () => {});
-	// });
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
 
-	// QUnit.module('Logical biconditional (equivalence)', () => {
-	// 	QUnit.module('Negation', () => {});
-	// });
+		QUnit.test('relation predicate in the last position', (assert) => {	
+			const queryTrc = "{ <a,b,c> | abs(a) > 0 and <a,b,c> in R }";
+			const queryRa = "sigma abs(a)>0 (R)";
+
+			const resultTrc = exec_drc(queryTrc).getResult()
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
+	});
+
+	QUnit.module('Logical implication', () => {
+		QUnit.test('given logical implication, it should return tuples that match the condition', (assert) => {
+			const queryTrc = "{ <a,b,c> | <a,b,c> in R and a > 5 ⇒ b = 'e' }";
+			// NOTE: p → q ≡ ¬p ∨ q
+			const queryRa = "sigma (a <= 5 or b = 'e') (R)";
+
+			const resultTrc = exec_drc(queryTrc).getResult()
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
+
+		QUnit.test('given logical implication with false rigth arm, it should return tuples that match the condition', (assert) => {
+			const queryTrc = "{ <a,b,c> | <a,b,c> in R and a > 0 ⇒ b = 'e' }";
+			// NOTE: p → q ≡ ¬p ∨ q
+			const queryRa = "sigma (a <= 0 or b = 'e') (R)";
+
+			const resultTrc = exec_drc(queryTrc).getResult()
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
+
+		QUnit.module('Negation', () => {
+			QUnit.test('given logical implication, it should not return tuples that match the condition', (assert) => {
+				const queryTrc = "{ <a,b,c> | <a,b,c> in R and not (a > 5 ⇒ b = 'a') }";
+				// NOTE: ¬(A → B) ≡ A ∧ ¬B
+				const queryRa = "sigma (a > 5 and b != 'a') (R)";
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+		});
+	});
+
+	QUnit.module('Logical biconditional (equivalence)', () => {
+		QUnit.test('given logical biconditional, it should return tuples that match the condition', (assert) => {
+			const queryTrc = "{ <a,b,c> | <a,b,c> in R and a > 6 ⇔ b = 'f' }";
+			// NOTE: p ⇔ q = (p ∧ q) ∨ (¬p ∧ ¬q)
+			const queryRa = "sigma ((a > 6) ∧ (b = 'f')) ∨ (¬(a > 6) ∧ ¬(b = 'f')) R";
+
+			const resultTrc = exec_drc(queryTrc).getResult()
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
+
+		QUnit.module('Negation', () => {
+			QUnit.test('given logical biconditional, it should not return tuples that match the condition', (assert) => {
+				const queryTrc = "{ <a,b,c> | <a,b,c> in R and not (a > 3 ⇔ b = 'e') }";
+				// NOTE: ¬(p ⇔ q) = (¬p ∨ ¬q) ∧ (p ∨ q)
+				const queryRa = "sigma (¬(a > 3) ∨ ¬(b = 'e') ) ∧ ((a > 3) ∨ (b = 'e')) R";
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+		});
+	});
 
 	QUnit.module('Predicates', () => {
 		QUnit.module('Conjunction', () => {
@@ -168,18 +242,162 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 				assert.deepEqual(resultDrc, resultRa);
 			})
-	// 		QUnit.module('Negation', () => {});
+			QUnit.test('given predicate with conjunction, when all the conditions meet, should return tuples', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and (a < 5 and a > 3) }';
+				const queryRa = 'sigma a < 5 and a > 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.module('Negation', () => {
+				QUnit.test('given predicate with conjunction, when all the conditions meet, should not return tuples', (assert) => {
+					const queryTrc = '{ <a,b,c> | <a,b,c> in R and not (a < 5 and a > 3) }';
+					const queryRa = 'sigma a >= 5 or a <= 3 (R)';
+
+					const resultTrc = exec_drc(queryTrc).getResult().getRows().sort()
+					const resultRa = exec_ra(queryRa).getResult().getRows().sort()
+
+					assert.deepEqual(resultTrc, resultRa);
+				});
+			});
 		});
 
-	// 	QUnit.module('Disjunction', () => {
-	// 		QUnit.module('Negation', () => {});
-	// 	});
+		QUnit.module('Negation', () => {
+			QUnit.test('test > predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not(a > 3) }';
+				const queryRa = 'sigma a <= 3 (R)';
 
-	// 	QUnit.module('Exclusive disjunction', () => {});
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
 
-	// 	QUnit.module('Negation', () => {})
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
 
-	// 	QUnit.module('Comparison', () => {})
+			QUnit.test('test < predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not(a < 3) }';
+				const queryRa = 'sigma a >= 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test = predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not(a = 3) }';
+				const queryRa = 'sigma a != 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test <= predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not(a <= 3) }';
+				const queryRa = 'sigma a > 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test >= predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not(a >= 3) }';
+				const queryRa = 'sigma a < 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test != predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not(a != 3) }';
+				const queryRa = 'sigma a = 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+		})
+
+		QUnit.module('Comparison', () => {
+			QUnit.test('test > predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and a > 3 }';
+				const queryRa = 'sigma a > 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('negation test > predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and a > 3 }';
+				const queryRa = 'sigma a > 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test < predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and a < 3 }';
+				const queryRa = 'sigma a < 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test = predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and a = 3 }';
+				const queryRa = 'sigma a = 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test <= predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and a <= 3 }';
+				const queryRa = 'sigma a <= 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test >= predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and a >= 3 }';
+				const queryRa = 'sigma a >= 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('test != predicate', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and a != 3 }';
+				const queryRa = 'sigma a != 3 (R)';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+		})
 	});
 
 	// QUnit.module('existencial quantifier operator(∃)', () => {
