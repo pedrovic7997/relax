@@ -400,11 +400,135 @@ QUnit.module('translate drc ast to relational algebra', () => {
 		})
 	});
 
-	// QUnit.module('existencial quantifier operator(∃)', () => {
-	// 	QUnit.module('Negation', () => {});
-	// });
+	QUnit.module('existencial quantifier operator(∃)', () => {
+		QUnit.test('given ∃ operator with no tuple variable refence and at least one true condition, should return all tuples', (assert) => {
+			const queryTrc = '{ <a,b,c> | <a,b,c> in R and ∃r( <r,s> in S and s > 300) }';
 
-	// QUnit.module('universal quantifier operator(∀)', () => {
-	// 	QUnit.module('Negation', () => {});
-	// });
+			const resultTrc = exec_drc(queryTrc).getResult()
+			const resultRa = srcTableR.getResult();
+
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
+
+		QUnit.test('given ∃ operator with no tuple variable reference and false condition, should return no tuples', (assert) => {
+			const queryTrc = '{ <a,b,c> | <a,b,c> in R and ∃r( <r,s> in S and s > 1000) }';
+
+			const resultTrc = exec_drc(queryTrc).getResult();
+
+			assert.equal(resultTrc.getNumRows(), 0);
+		});
+
+		QUnit.test('given ∃ operator with tuple variable reference and true condition, should return tuples that match the condition', (assert) => {
+			const queryTrc = '{ <a,b,c> | <a,b,c> in R and ∃r( <r,s> in S and r = b) }';
+			const queryRa = 'pi R.a, R.b, R.c (R join R.b = S.b S)'
+
+			const resultTrc = exec_drc(queryTrc).getResult();
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
+
+		QUnit.module('Negation', () => {
+			QUnit.test('given ¬∃ with no tuple variable refence and at least one exists true condition, should return no tuples', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not ∃r( <r,s> in S and s > 300) }';
+
+				const resultTrc = exec_drc(queryTrc).getResult()
+
+				assert.equal(resultTrc.getNumRows(), 0);
+			});
+
+			QUnit.test('given ¬∃ with no tuple variable reference and exists false condition, should return all tuples', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not ∃r( <r,s> in S and s > 1000) }';
+
+				const resultTrc = exec_drc(queryTrc).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), srcTableR.getResult().getRows());
+			});
+
+			QUnit.test('given ¬∃ with tuple variable reference and, return tuples that do not match the condition', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not ∃r( <r,s> in S and (s < 200 and a < 3)) }';
+				const queryRa = 'sigma R.a >= 3 (R)'
+
+				const resultTrc = exec_drc(queryTrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+		});
+	});
+
+	QUnit.module('universal quantifier operator(∀)', () => {
+		QUnit.test('given ∀ operator with relation predicate, should return all tuples', (assert) => {
+			const queryTrc = '{ <a,b,c> | <a,b,c> in R and ∀s (<r,s> in S) }';
+
+			const resultTrc = exec_drc(queryTrc).getResult();
+			const resultRa = srcTableR.getResult();
+
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
+
+		QUnit.test('given ∀ operator with no tuple variable reference and true condition for some elements but not all, should return no tuples', (assert) => {
+			const queryTrc = '{ <a,b,c> | <a,b,c> in R and ∀s(<r,s> in S and s > 300) }';
+
+			const resultTrc = exec_drc(queryTrc).getResult();
+
+			assert.equal(resultTrc.getNumRows(), 0);
+		});
+
+		QUnit.test('given ∀ operator with no tuple variable reference and true condition for all elements, should return all tuples', (assert) => {
+			const queryTrc = '{ <a,b,c> | <a,b,c> in R and ∀s(<r,s> in S and s > 50) }';
+
+			const resultTrc = exec_drc(queryTrc).getResult();
+			const resultRa = srcTableR.getResult();
+
+			assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+		});
+
+		QUnit.test('given ∀ operator with tuple variable reference should return tuples that match the condition', (assert) => {
+			const queryTrc1 = '{ <a,b,c> | <a,b,c> in R and ∀s(<r,s> in S ⇒ s < a) }';
+			const queryTrc2 = '{ <a,b,c> | <a,b,c> in R and ∀s(<r,s> in S ⇒ s > a) }';
+
+			const expectedResult1 = exec_ra('sigma a = 1000 (R)').getResult()
+			const expectedResult2 = exec_ra('sigma a < 1000 (R)').getResult()
+
+			const resultTrc1 = exec_drc(queryTrc1).getResult();
+			const resultTrc2 = exec_drc(queryTrc2).getResult();
+
+			assert.deepEqual(resultTrc1.getRows(), expectedResult1.getRows());
+			assert.deepEqual(resultTrc2.getRows(), expectedResult2.getRows());
+		});
+
+		QUnit.module('Negation', () => {
+			QUnit.test('given ∀ operator with no tuple variable reference and true condition for some elements but not all, should return all tuples', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not ∀s(<r,s> in S and s > 300) }';
+
+				const resultRa = srcTableR.getResult();
+				const resultTrc = exec_drc(queryTrc).getResult();
+
+				assert.deepEqual(resultTrc.getRows(), resultRa.getRows());
+			});
+
+			QUnit.test('given ∀ operator with no tuple variable reference and true condition for all elements, should return no tuples', (assert) => {
+				const queryTrc = '{ <a,b,c> | <a,b,c> in R and not ∀s(<r,s> in S and s > 50) }';
+
+				const resultTrc = exec_drc(queryTrc).getResult();
+
+				assert.equal(resultTrc.getNumRows(), 0);
+			});
+
+			QUnit.test('given ∀ operator with tuple variable reference should return tuples that do not match the condition', (assert) => {
+				const queryTrc1 = '{ <a,b,c> | <a,b,c> in R and not ∀s(<r,s> in S ⇒ s < a) }';
+				const queryTrc2 = '{ <a,b,c> | <a,b,c> in R and not ∀s(<r,s> in S ⇒ s > a) }';
+
+				const expectedResult1 = exec_ra('sigma a != 1000 (R)').getResult()
+				const expectedResult2 = exec_ra('sigma a >= 1000 (R)').getResult()
+
+				const resultTrc1 = exec_drc(queryTrc1).getResult();
+				const resultTrc2 = exec_drc(queryTrc2).getResult();
+
+				assert.deepEqual(resultTrc1.getRows(), expectedResult1.getRows());
+				assert.deepEqual(resultTrc2.getRows(), expectedResult2.getRows());
+			});
+		});
+	});
 });
