@@ -252,7 +252,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 						}
 
 						const relation = relations[relationPredicate.relation].copy()
-						const renamed = new RenameRelation(relation, relationPredicate.variable)
+						const renamed = handleRenameColumns(relation, relationPredicate)
 						const newBaseRel = new CrossJoin(renamed, baseRel)
 
 						if (negated) {
