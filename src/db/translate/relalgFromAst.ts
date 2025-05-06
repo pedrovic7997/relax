@@ -396,7 +396,14 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 				if (!baseRel) {
 					throw new Error('Base relation is null!')
 				}
-				return new SemiJoin(baseRel, relations[nRaw.relation].copy(), true)
+
+				let currentRelationPredicate = {
+					variables: (nRaw.variables as string[]),
+					relation: (nRaw.relation as string)
+				} as temporaryRelationPredicate;
+				const renamedColumns = handleRenameColumns(relations[nRaw.relation].copy(), currentRelationPredicate);
+
+				return new SemiJoin(baseRel, renamedColumns, true)
 			}
 
 			case 'Negation': {
