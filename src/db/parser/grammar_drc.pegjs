@@ -11,8 +11,8 @@
 		return { type: 'LogicalExpression', left, operator, right };
 	}
 
-	function createQuantifiedExpression(quantifier, variable, formula) {
-		return { type: 'QuantifiedExpression', quantifier, variable, formula };
+	function createQuantifiedExpression(quantifier, variables, formula) {
+		return { type: 'QuantifiedExpression', quantifier, variables, formula };
 	}
 
 	function createNegation(formula) {
@@ -119,21 +119,21 @@ BaseFormula
     {
       return formula;
     }
-  / existentialQuantifier _ variable:Variable _ '(' _ formula:Formula _ ')'
+  / existentialQuantifier _ variables:listOfVariables _ '(' _ formula:Formula _ ')'
     {
-      return createQuantifiedExpression('exists', variable, formula);
+      return createQuantifiedExpression('exists', variables, formula);
     }
-  / '(' _ existentialQuantifier _ variable:Variable  _ ')' _ '(' _ formula:Formula _ ')'
+  / '(' _ existentialQuantifier _ variables:listOfVariables  _ ')' _ '(' _ formula:Formula _ ')'
     {
-      return createQuantifiedExpression('exists', variable, formula);
+      return createQuantifiedExpression('exists', variables, formula);
     }
-  / universalQuantifier _ variable:Variable _ '(' _ formula:Formula _ ')'
+  / universalQuantifier _ variables:listOfVariables _ '(' _ formula:Formula _ ')'
     {
-      return createQuantifiedExpression('forAll', variable, formula);
+      return createQuantifiedExpression('forAll', variables, formula);
     }
-  / '(' _ universalQuantifier _ variable:Variable _ ')' _ '(' _ formula:Formula _ ')'
+  / '(' _ universalQuantifier _ variables:listOfVariables _ ')' _ '(' _ formula:Formula _ ')'
     {
-      return createQuantifiedExpression('forAll', variable, formula);
+      return createQuantifiedExpression('forAll', variables, formula);
     }
 
 RelationPredicate
@@ -773,6 +773,18 @@ columnName
 
 listOfColumns
 = a:columnName b:(_ ',' _ columnName)*
+	{
+		var t = [a];
+		if(b !== null){
+			for(var i in b){
+				t.push(b[i][3]);
+			}
+		}
+		return t;
+	}
+
+listOfVariables
+= a:variableName b:(_ ',' _ variableName)*
 	{
 		var t = [a];
 		if(b !== null){

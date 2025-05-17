@@ -39,7 +39,7 @@ declare namespace drcAst {
 	interface QuantifiedExpression {
 		type: 'QuantifiedExpression',
 		quantifier: Quantifier,
-		variable: string,
+		variables: string[],
 		formula: LogicalExpression 
 	}
 

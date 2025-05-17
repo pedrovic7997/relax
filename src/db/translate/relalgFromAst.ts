@@ -246,13 +246,18 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 							throw new Error('Base relation is null!')
 						}
 
-						const relationPredicate = getRelationPredicate(nRaw, nRaw.variable)
-						if (!relationPredicate) {
-							throw new Error('Relation predicate must be defined!')
+						const relationPredicates = (nRaw.variables as string[]).map(variable => getRelationPredicate(nRaw, variable));
+						if (!relationPredicates || relationPredicates.length === 0) {
+							throw new Error('Relation predicate must be defined!');
 						}
 
-						const relation = relations[relationPredicate.relation].copy()
-						const renamed = handleRenameColumns(relation, relationPredicate)
+						const uniqueRelationPredicates = [...new Set(relationPredicates)];
+						if (uniqueRelationPredicates.length > 1){
+							throw new Error('Only variables from one Relation Predicate are allowed!');
+						}						
+
+						const relation = relations[uniqueRelationPredicates[0]!.relation].copy()
+						const renamed = handleRenameColumns(relation, uniqueRelationPredicates[0]!)
 						const newBaseRel = new CrossJoin(renamed, baseRel)
 
 						if (negated) {

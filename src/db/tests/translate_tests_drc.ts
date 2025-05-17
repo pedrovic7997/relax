@@ -438,6 +438,16 @@ QUnit.module('translate drc ast to relational algebra', () => {
 			assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
 		});
 
+		QUnit.test('given ∃ with multiple variables and simple Relation Predicate with no correlation to the outer scope of quantifier operator', (assert) => {
+			const queryDrc = '{<a,b> | <a,b> in S and ∃r,s( <r,s,t> in R)}';
+			const queryRa = 'π S.a, S.b ( ρ a←b, b←d S ⋉ ( ( ρ r←a, s←b, t←c R ⨯ ρ a←b, b←d S ) ⋉ ρ r←a, s←b, t←c R ) )'
+
+			const resultDrc = exec_drc(queryDrc).getResult();
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
+		});
+
 		QUnit.module('Negation', () => {
 			QUnit.test('given ¬∃ with no tuple variable refence and at least one exists true condition, should return no tuples', (assert) => {
 				const queryDrc = '{ <a,b,c> | <a,b,c> in R and not ∃r( <r,s> in S and s > 300) }';
@@ -473,6 +483,16 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 			const resultDrc = exec_drc(queryDrc).getResult();
 			const resultRa = srcTableR.getResult();
+
+			assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
+		});
+
+		QUnit.test('given ∀ operator with multiple variables and relation predicate, should return all tuples', (assert) => {
+			const queryDrc = '{ <a,b,c> | <a,b,c> in R and ∀r,s (<r,s> in S) }';
+			const queryRa = 'π R.a, R.b, R.c ( ρ a←a, b←b, c←c R ⋉ ( ( ρ r←b, s←d S ⨯ ρ a←a, b←b, c←c R ) ⋉ ρ r←b, s←d S ) ) '
+
+			const resultDrc = exec_drc(queryDrc).getResult();
+			const resultRa = exec_ra(queryRa).getResult();
 
 			assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
 		});
