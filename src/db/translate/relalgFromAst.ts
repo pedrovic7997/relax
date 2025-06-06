@@ -109,7 +109,58 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return makeValueExpr('boolean', func, args)
 	}
 
-	function checkForUnboundVariables(root: any){
+	function checkForRepeatedVariableInQuantifiers(root: any): void {
+		const quantifiedExpressions: quantifiedExpressionsWithScope[] = getAllQuantifiedExpression(root);
+
+		quantifiedExpressions.forEach( q => {
+			const outerRoot = getOuterRootFromScope(root, q.root, q.scope);
+			const repeatedVariable = (outerRoot.variables as string[]).find(variable => q.root.variables.includes(variable));
+			if (repeatedVariable) throw new ExecutionError(`Same variable name "${repeatedVariable}" from ${q.root.quantifier} quantifier reused from <${outerRoot.variables.join(",")}>.`);
+		})
+	}
+
+	function getOuterRootFromScope(root: any, target: any, scope: number): any {
+		let rootFound = false;
+		let outerRoot: any = undefined;
+
+		function getRoot(root: any, scopeChanges = 0): void {
+			switch (root.type) {
+				case 'DRC_Expr': {
+					getRoot(root.formula, ++scopeChanges)
+					if (rootFound && !outerRoot) {
+						outerRoot = root;
+					}
+					return
+				}
+				case 'RelationPredicate': return
+				case 'Negation': {
+					getRoot(root.formula, scopeChanges)
+					return;
+				}
+				case 'QuantifiedExpression': {
+					if (rootFound && !outerRoot) {
+						outerRoot = root;
+					}
+					if (scopeChanges == scope && root == target) {
+						rootFound = true;
+					};
+					getRoot(root.formula, ++scopeChanges)
+					return
+				}
+				case 'LogicalExpression': {
+					getRoot(root.left, scopeChanges)
+					getRoot(root.right, scopeChanges)
+					return
+				}
+				default: return
+			}
+		}
+		getRoot(root);
+
+		return outerRoot;
+	}
+
+	function checkForUnboundVariables(root: any): void {
 		
 		const relationPredicates = getAllRelationPredicatesPerScope(root);
 		const domainVariables = root.variables;
@@ -314,6 +365,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	function rec(nRaw: drcAst.DRC_Expr | any, baseRel: RANode | null = null, negated: boolean = false): any {
 		if (nRaw.type == 'DRC_Expr') {
 			checkForUnboundVariables(nRaw);
+			checkForRepeatedVariableInQuantifiers(nRaw);
 		}
 
 		switch (nRaw.type) {
