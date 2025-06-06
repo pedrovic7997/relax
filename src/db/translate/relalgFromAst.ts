@@ -155,7 +155,6 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 					return
 				} 
 				case 'QuantifiedExpression': {
-					// getAllRelationPredicatesRec(root.formula);
 					return
 				} 
 				case 'LogicalExpression': {
