@@ -109,6 +109,40 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return makeValueExpr('boolean', func, args)
 	}
 
+	function checkForUnsuportedRelationPredicateFormats(root: any): void {
+		function runCheckForFormat(root: any): void {
+			const relationPredicates = getAllRelationPredicatesPerScope(root);
+
+			for (let i=0; i < relationPredicates.length; i++) {
+				const mainRelation = relationPredicates[i];
+				const mainRelationLenght = mainRelation.variables.length;
+				for (let j=0; j < mainRelationLenght; j++) {
+					const variable = mainRelation.variables[j];
+					for (let k=i+1; k < relationPredicates.length; k++) {
+						const nextRelation = relationPredicates[k];
+						const nextRelationLength = nextRelation.variables.length;
+						for (let l=0; l < nextRelationLength; l++) {
+							const currentVariable = nextRelation.variables[l];
+							if (variable === currentVariable && (l != j || mainRelationLenght != nextRelationLength)) {
+								throw new ExecutionError('Condition of partially correlated variables between Relational Predicates not supported.');
+							}
+						}
+					}
+				}
+			}
+		}
+
+		runCheckForFormat(root);
+		
+		const quantifiedExpressions: quantifiedExpressionsWithScope[] = getAllQuantifiedExpression(root);
+
+		while (quantifiedExpressions.length > 0) {
+			const quantifiedExpression = quantifiedExpressions.shift();
+
+			runCheckForFormat(quantifiedExpression);
+		}
+	}
+
 	function checkForRepeatedVariableInQuantifiers(root: any): void {
 		const quantifiedExpressions: quantifiedExpressionsWithScope[] = getAllQuantifiedExpression(root);
 
@@ -160,8 +194,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return outerRoot;
 	}
 
-	function checkForUnboundVariables(root: any): void {
-		
+	function checkForUnboundVariables(root: any): void {		
 		const relationPredicates = getAllRelationPredicatesPerScope(root);
 		const domainVariables = root.variables;
 
@@ -188,7 +221,6 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	}
 
 	function getAllRelationPredicatesPerScope(root: any): temporaryRelationPredicate[] {
-
 		const relationPredicates: temporaryRelationPredicate[] = [];
 
 		function getAllRelationPredicatesRec(root: any): void {
@@ -223,7 +255,6 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	}
 
 	function getAllQuantifiedExpression(root: any): quantifiedExpressionsWithScope[] {
-
 		const quantifiedExpressions: quantifiedExpressionsWithScope[] = [];
 
 		function getAllQuantifiedExpressionRootsRec(root: any, scopeChanges = 0): void{
@@ -366,6 +397,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		if (nRaw.type == 'DRC_Expr') {
 			checkForUnboundVariables(nRaw);
 			checkForRepeatedVariableInQuantifiers(nRaw);
+			checkForUnsuportedRelationPredicateFormats(nRaw);
 		}
 
 		switch (nRaw.type) {
