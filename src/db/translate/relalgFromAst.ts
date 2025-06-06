@@ -52,7 +52,9 @@ function parseJoinCondition(condition: relalgAst.booleanExpr | string[] | null):
 	}
 }
 
-type temporaryRelationPredicate = trcAst.RelationPredicate & drcAst.RelationPredicate
+type temporaryRelationPredicate = trcAst.RelationPredicate & drcAst.RelationPredicate;
+
+interface quantifiedExpressionsWithScope {root: drcAst.QuantifiedExpression; scope: number}
 
 export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations: { [key: string]: Relation }): RANode 
 {
@@ -107,6 +109,103 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return makeValueExpr('boolean', func, args)
 	}
 
+	function checkForUnboundVariables(root: any){
+		
+		const relationPredicates = getAllRelationPredicatesPerScope(root);
+		const domainVariables = root.variables;
+
+		const relationWithUnboundVariable = relationPredicates.find((relation: temporaryRelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
+			
+		if (relationWithUnboundVariable) {
+			throw new ExecutionError(`Unbound variables <${relationWithUnboundVariable.variables.join(",")}> in ${relationWithUnboundVariable.relation} are not supported.`);
+		}
+			
+		const quantifiedExpressions: quantifiedExpressionsWithScope[] = getAllQuantifiedExpression(root);
+
+		while (quantifiedExpressions.length > 0) {
+			const quantifiedExpression = quantifiedExpressions.shift();
+
+			const relationPredicates = getAllRelationPredicatesPerScope(quantifiedExpression?.root.formula);
+			const domainVariables = quantifiedExpression?.root.variables;
+
+			const relationWithUnboundVariable = relationPredicates.find((relation: temporaryRelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
+			
+			if (relationWithUnboundVariable) {
+				throw new ExecutionError(`Unbound variables <${relationWithUnboundVariable.variables.join(",")}> in ${relationWithUnboundVariable.relation} are not supported.`);
+			}
+		}
+	}
+
+	function getAllRelationPredicatesPerScope(root: any): temporaryRelationPredicate[] {
+
+		const relationPredicates: temporaryRelationPredicate[] = [];
+
+		function getAllRelationPredicatesRec(root: any): void {
+			switch (root.type) {
+				case 'DRC_Expr': {
+					getAllRelationPredicatesRec(root.formula)
+					return
+				}
+				case 'RelationPredicate': {
+					relationPredicates.push(root);
+					return
+				}
+				case 'Negation': {
+					getAllRelationPredicatesRec(root.formula);
+					return
+				} 
+				case 'QuantifiedExpression': {
+					// getAllRelationPredicatesRec(root.formula);
+					return
+				} 
+				case 'LogicalExpression': {
+					getAllRelationPredicatesRec(root.left);
+					getAllRelationPredicatesRec(root.right);
+					return
+				}
+				default: return
+			}
+		}
+
+		getAllRelationPredicatesRec(root);
+
+		return relationPredicates;
+	}
+
+	function getAllQuantifiedExpression(root: any): quantifiedExpressionsWithScope[] {
+
+		const quantifiedExpressions: quantifiedExpressionsWithScope[] = [];
+
+		function getAllQuantifiedExpressionRootsRec(root: any, scopeChanges = 0): void{
+			switch (root.type) {
+				case 'DRC_Expr': {
+					getAllQuantifiedExpressionRootsRec(root.formula, ++scopeChanges)
+					return
+				}
+				case 'RelationPredicate': return
+				case 'Negation': {
+					getAllQuantifiedExpressionRootsRec(root.formula, scopeChanges);
+					return
+				} 
+				case 'QuantifiedExpression': {
+					quantifiedExpressions.push({root: root, scope: scopeChanges});
+					getAllQuantifiedExpressionRootsRec(root.formula, ++scopeChanges);
+					return
+				} 
+				case 'LogicalExpression': {
+					getAllQuantifiedExpressionRootsRec(root.left, scopeChanges);
+					getAllQuantifiedExpressionRootsRec(root.right, scopeChanges);
+					return
+				}
+				default: return
+			}
+		}
+
+		getAllQuantifiedExpressionRootsRec(root);
+
+		return quantifiedExpressions;
+	}
+
 	function getRelationPredicate(root: any, domainVar: string, scopeChanges = 0): temporaryRelationPredicate | null {
 		// NOTE: this represents that the scope has changed, so it doesn't make sense to keep searching
 		if (scopeChanges >= 2) {
@@ -126,11 +225,6 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			case 'LogicalExpression': {
 				const left = getRelationPredicate(root.left, domainVar, scopeChanges)
 				const right = getRelationPredicate(root.right, domainVar, scopeChanges)
-
-				// NOTE: if more than one relationPredicate was encountered
-				if (left && right) {
-					throw new Error('Cannot define RelationPredicate more than once per scope!')
-				}
 
 				return left ?? right
 			}
@@ -168,7 +262,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			return relationPredicate
 		})
 
-		const uniqueRelationPredicates = [...new Set(relationPredicates)]
+		const uniqueRelationPredicates = [...new Set(relationPredicates)];
 
 		if (uniqueRelationPredicates.length <= 1) {
 			var relationPredicate = uniqueRelationPredicates[0];
@@ -219,6 +313,10 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	}
 
 	function rec(nRaw: drcAst.DRC_Expr | any, baseRel: RANode | null = null, negated: boolean = false): any {
+		if (nRaw.type == 'DRC_Expr') {
+			checkForUnboundVariables(nRaw);
+		}
+
 		switch (nRaw.type) {
 			case 'DRC_Expr': {
 				const projections = nRaw.projections.flatMap((e: any) => {
