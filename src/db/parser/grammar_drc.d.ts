@@ -3,7 +3,16 @@ declare namespace drcAst {
 	type Quantifier = 'exists' | 'forAll'
 	type LogicalOperator = 'or' | 'and' | 'implies'
 
+	interface CodeInfo {
+		location: {
+			start: { offset: number, line: number, column: number },
+			end: { offset: number, line: number, column: number },
+		},
+		text: string
+	}
+
 	interface DRC_Expr {
+		codeInfo: CodeInfo
 		type: 'DRC_Expr',
 		variables: string[],
 		projections: Projection[]
@@ -13,6 +22,7 @@ declare namespace drcAst {
 	type Projection = (relalgAst.columnName | relalgAst.namedColumnExpr)[]
 
 	interface LogicalExpression {
+		codeInfo: CodeInfo
 		type: 'LogicalExpression',
 		left: AttributeReference | LogicalExpression,
 		operator: LogicalOperator,
@@ -20,23 +30,27 @@ declare namespace drcAst {
 	}
 
 	interface RelationPredicate {
+		codeInfo: CodeInfo
 		type: 'RelationPredicate',
 		relation: string,
 		variables: string[] 
 	}
 
 	interface Predicate {
+		codeInfo: CodeInfo
 		type: 'Predicate',
 		condition: relalgAst.valueExpr
 	}
 
 	interface AttributeReference {
+		codeInfo: CodeInfo
 		type: 'AttributeReference',
 		variable: string,
 		attribute: string
 	}
 
 	interface QuantifiedExpression {
+		codeInfo: CodeInfo
 		type: 'QuantifiedExpression',
 		quantifier: Quantifier,
 		variables: string[],
@@ -44,6 +58,7 @@ declare namespace drcAst {
 	}
 
 	interface Negation {
+		codeInfo: CodeInfo
 		type: 'Negation',
 		formula: LogicalExpression
 	}

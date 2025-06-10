@@ -68,6 +68,10 @@ export class EditorDrc extends React.Component<Props, State> {
 
 					const root = relalgFromDRCAstRoot(ast, relations)
 
+					const warnings = root.getWarnings(true).map(x => x.message).join('\n');
+
+					self.addExecutionWarning(warnings);
+
 					root.check()
 
 					return {

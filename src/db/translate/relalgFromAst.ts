@@ -58,6 +58,8 @@ interface quantifiedExpressionsWithScope {root: drcAst.QuantifiedExpression; sco
 
 export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations: { [key: string]: Relation }): RANode 
 {
+	const warnings: {msg: string, codeInfo: CodeInfo}[] = [];
+
 	function recValueExpr(n: relalgAst.valueExpr | sqlAst.valueExpr): ValueExpr.ValueExpr {
 		let node: ValueExpr.ValueExpr;
 		if (n.datatype === 'null' && n.func === 'columnValue') {
@@ -109,7 +111,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return makeValueExpr('boolean', func, args)
 	}
 
-	function checkForUnsuportedRelationPredicateFormats(root: any): void {
+	function checkForUnsuportedRelationPredicateFormats(root: any, quantifiedExpressions: quantifiedExpressionsWithScope[]): void {
 		function runCheckForFormat(root: any): void {
 			const relationPredicates = getAllRelationPredicatesPerScope(root);
 
@@ -134,8 +136,6 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 		runCheckForFormat(root);
 		
-		const quantifiedExpressions: quantifiedExpressionsWithScope[] = getAllQuantifiedExpression(root);
-
 		while (quantifiedExpressions.length > 0) {
 			const quantifiedExpression = quantifiedExpressions.shift();
 
@@ -143,9 +143,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		}
 	}
 
-	function checkForRepeatedVariableInQuantifiers(root: any): void {
-		const quantifiedExpressions: quantifiedExpressionsWithScope[] = getAllQuantifiedExpression(root);
-
+	function checkForRepeatedVariableInQuantifiers(root: any, quantifiedExpressions: quantifiedExpressionsWithScope[]): void {
 		quantifiedExpressions.forEach( q => {
 			const outerRoot = getOuterRootFromScope(root, q.root, q.scope);
 			const repeatedVariable = (outerRoot.variables as string[]).find(variable => q.root.variables.includes(variable));
@@ -194,17 +192,18 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return outerRoot;
 	}
 
-	function checkForUnboundVariables(root: any): void {		
+	function checkForUndeclaredVariables(
+		root: any, 
+		quantifiedExpressions: quantifiedExpressionsWithScope[]
+	): void {		
 		const relationPredicates = getAllRelationPredicatesPerScope(root);
 		const domainVariables = root.variables;
 
-		const relationWithUnboundVariable = relationPredicates.find((relation: temporaryRelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
+		const relationWithUndeclaredVariable = relationPredicates.find((relation: temporaryRelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
 			
-		if (relationWithUnboundVariable) {
-			throw new ExecutionError(`Unbound variables <${relationWithUnboundVariable.variables.join(",")}> in ${relationWithUnboundVariable.relation} are not supported.`);
+		if (relationWithUndeclaredVariable) {
+			warnings.push({msg: `Undeclared variables <${relationWithUndeclaredVariable.variables.join(",")}> in ${relationWithUndeclaredVariable.relation}.`, codeInfo: relationWithUndeclaredVariable.codeInfo});
 		}
-			
-		const quantifiedExpressions: quantifiedExpressionsWithScope[] = getAllQuantifiedExpression(root);
 
 		while (quantifiedExpressions.length > 0) {
 			const quantifiedExpression = quantifiedExpressions.shift();
@@ -212,10 +211,10 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			const relationPredicates = getAllRelationPredicatesPerScope(quantifiedExpression?.root.formula);
 			const domainVariables = quantifiedExpression?.root.variables;
 
-			const relationWithUnboundVariable = relationPredicates.find((relation: temporaryRelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
+			const relationWithUndeclaredVariable = relationPredicates.find((relation: temporaryRelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
 			
-			if (relationWithUnboundVariable) {
-				throw new ExecutionError(`Unbound variables <${relationWithUnboundVariable.variables.join(",")}> in ${relationWithUnboundVariable.relation} are not supported.`);
+			if (relationWithUndeclaredVariable) {
+				warnings.push({msg: `Undeclared variables <${relationWithUndeclaredVariable.variables.join(",")}> in ${relationWithUndeclaredVariable.relation}.`, codeInfo: relationWithUndeclaredVariable.codeInfo});
 			}
 		}
 	}
@@ -395,9 +394,10 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 	function rec(nRaw: drcAst.DRC_Expr | any, baseRel: RANode | null = null, negated: boolean = false): any {
 		if (nRaw.type == 'DRC_Expr') {
-			checkForUnboundVariables(nRaw);
-			checkForRepeatedVariableInQuantifiers(nRaw);
-			checkForUnsuportedRelationPredicateFormats(nRaw);
+			const quantifiedExpressions: quantifiedExpressionsWithScope[] = getAllQuantifiedExpression(nRaw);
+			checkForUndeclaredVariables(nRaw, [...quantifiedExpressions]);
+			checkForRepeatedVariableInQuantifiers(nRaw, [...quantifiedExpressions]);
+			checkForUnsuportedRelationPredicateFormats(nRaw, [...quantifiedExpressions]);
 		}
 
 		switch (nRaw.type) {
@@ -416,6 +416,9 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 				const base = handleDomainVariables(nRaw)
 				const res = rec(nRaw.formula, base)
+				if (warnings.length > 0) {
+					warnings.forEach(w => res.addWarning(w.msg, w.codeInfo));
+				}
 
 				return new Projection(res, projections)
 			}
