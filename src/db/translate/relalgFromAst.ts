@@ -135,7 +135,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		}
 
 		runCheckForFormat(root);
-		
+
 		while (quantifiedExpressions.length > 0) {
 			const quantifiedExpression = quantifiedExpressions.shift();
 
@@ -286,30 +286,47 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return quantifiedExpressions;
 	}
 
-	function getRelationPredicate(root: any, domainVar: string, scopeChanges = 0): temporaryRelationPredicate | null {
-		// NOTE: this represents that the scope has changed, so it doesn't make sense to keep searching
-		if (scopeChanges >= 2) {
-			return null
-		}
+	function getRelationPredicate(root: any, domainVar: string): temporaryRelationPredicate[] {
+		const relationPredicates: temporaryRelationPredicate[] = [];
 
-		switch (root.type) {
-			case 'DRC_Expr': return getRelationPredicate(root.formula, domainVar, ++scopeChanges)
-			case 'RelationPredicate': {
-				if (root.variables.indexOf(domainVar) >= 0) {
-					return root
+		function getRelationPredicateRec(root: any, domainVar: string, scopeChanges = 0): void {
+			// NOTE: this represents that the scope has changed, so it doesn't make sense to keep searching
+			if (scopeChanges >= 2) {
+				return;
+			}
+
+			switch (root.type) {
+				case 'DRC_Expr': {
+					getRelationPredicateRec(root.formula, domainVar, ++scopeChanges);
+					return;
 				}
-				return null
-			}
-			case 'Negation': return getRelationPredicate(root.formula, domainVar, scopeChanges)
-			case 'QuantifiedExpression': return getRelationPredicate(root.formula, domainVar, ++scopeChanges)
-			case 'LogicalExpression': {
-				const left = getRelationPredicate(root.left, domainVar, scopeChanges)
-				const right = getRelationPredicate(root.right, domainVar, scopeChanges)
+				case 'RelationPredicate': {
+					if (root.variables.indexOf(domainVar) >= 0) {
+						relationPredicates.push(root);
+					}
+					return;
+				}
+				case 'Negation': {
+					getRelationPredicateRec(root.formula, domainVar, scopeChanges);
+					return;
+				}
+				case 'QuantifiedExpression': {
+					getRelationPredicateRec(root.formula, domainVar, ++scopeChanges);
+					return;
+				}
+				case 'LogicalExpression': {
+					getRelationPredicateRec(root.left, domainVar, scopeChanges);
+					getRelationPredicateRec(root.right, domainVar, scopeChanges);
 
-				return left ?? right
+					return;
+				}
+				default: return;
 			}
-			default: return null
 		}
+
+		getRelationPredicateRec(root, domainVar);
+
+		return relationPredicates;
 	}
 
 	const and = (left: any, right: any) => ({
@@ -332,14 +349,14 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	})
 
 	function handleDomainVariables(nRaw: any): RANode {
-		const relationPredicates: temporaryRelationPredicate[] = nRaw.variables.map((v: string) => {
-			var relationPredicate = getRelationPredicate(nRaw, v)
+		const relationPredicates: temporaryRelationPredicate[] = nRaw.variables.flatMap((v: string) => {
+			var relationPredicates = [...getRelationPredicate(nRaw, v)]
 
-			if (!relationPredicate) {
+			if (relationPredicates.length === 0) {
 				throw new Error('Relation predicate must be defined!')
 			}
 
-			return relationPredicate
+			return relationPredicates
 		})
 
 		const uniqueRelationPredicates = [...new Set(relationPredicates)];
@@ -379,17 +396,17 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	}
 
 	function getColumnData(nRaw: any, variable: string): Column {
-		const pred = getRelationPredicate(nRaw, variable)
-		if (!pred) {
+		const predicates = getRelationPredicate(nRaw, variable)
+		if (predicates.length === 0) {
 			throw new Error('Domain variable must be declared in some Relation predicate!')
 		}
 
-		const rel = relations[pred.relation].copy() as Relation
+		const rel = relations[predicates[0].relation].copy() as Relation
 		if (!rel) throw new Error("Cannot find relation!")
 
-		const col = rel.getSchema().getColumn(pred.variables.indexOf(variable))
+		const col = rel.getSchema().getColumn(predicates[0].variables.indexOf(variable))
 
-		return new Column(variable, pred.relation, col.getType())
+		return new Column(variable, predicates[0].relation, col.getType())
 	}
 
 	function rec(nRaw: drcAst.DRC_Expr | any, baseRel: RANode | null = null, negated: boolean = false): any {
@@ -430,15 +447,12 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 							throw new Error('Base relation is null!')
 						}
 
-						const relationPredicates = (nRaw.variables as string[]).map(variable => getRelationPredicate(nRaw, variable));
+						const relationPredicates = (nRaw.variables as string[]).flatMap(variable => [...getRelationPredicate(nRaw, variable)]);
 						if (!relationPredicates || relationPredicates.length === 0) {
 							throw new Error('Relation predicate must be defined!');
 						}
 
 						const uniqueRelationPredicates = [...new Set(relationPredicates)];
-						if (uniqueRelationPredicates.length > 1){
-							throw new Error('Only variables from one Relation Predicate are allowed!');
-						}						
 
 						const relation = relations[uniqueRelationPredicates[0]!.relation].copy()
 						const renamed = handleRenameColumns(relation, uniqueRelationPredicates[0]!)
