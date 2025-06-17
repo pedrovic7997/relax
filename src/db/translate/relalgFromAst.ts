@@ -139,7 +139,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		while (quantifiedExpressions.length > 0) {
 			const quantifiedExpression = quantifiedExpressions.shift();
 
-			runCheckForFormat(quantifiedExpression);
+			runCheckForFormat(quantifiedExpression?.root.formula);
 		}
 	}
 
