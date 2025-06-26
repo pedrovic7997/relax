@@ -54,7 +54,9 @@ function parseJoinCondition(condition: relalgAst.booleanExpr | string[] | null):
 
 type temporaryRelationPredicate = trcAst.RelationPredicate & drcAst.RelationPredicate;
 
-interface quantifiedExpressionsWithScope {root: drcAst.QuantifiedExpression; scope: number}
+interface quantifiedExpressionsWithScope {root: drcAst.QuantifiedExpression; scope: number};
+
+interface RelationPredicateWithLogicalExpression { relationPredicate: drcAst.RelationPredicate, logicalExpression: string | null, hasEquivalent: boolean };
 
 export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations: { [key: string]: Relation }): RANode 
 {
@@ -286,6 +288,48 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return quantifiedExpressions;
 	}
 
+	function getAllRelationPredicatesAndLogicalExpression(root: any): RelationPredicateWithLogicalExpression[][] {
+		const relationPredicates: RelationPredicateWithLogicalExpression[][] = [];
+
+		function getAllRelationPredicatesAndLogicalExpressionRec(root: any, scopeChanges = 0): void {
+			switch (root.type) {
+				case 'DRC_Expr': 
+				case 'QuantifiedExpression': {
+					relationPredicates.push([] as RelationPredicateWithLogicalExpression[]);
+					getAllRelationPredicatesAndLogicalExpressionRec(root.formula, ++scopeChanges);
+					return;
+				}
+				case 'LogicalExpression': {
+					if (root.right.type === 'RelationPredicate') {
+						relationPredicates[scopeChanges - 1].unshift({relationPredicate: root.right, logicalExpression: root.operator, hasEquivalent: false});
+					}
+					else if (root.operator === 'and' && root.right.type === 'Negation' && root.right.formula.type === 'RelationPredicate') {
+						relationPredicates[scopeChanges - 1].unshift({relationPredicate: root.right.formula, logicalExpression: root.operator + ' not', hasEquivalent: false});
+					}
+					else {
+						getAllRelationPredicatesAndLogicalExpressionRec(root.right, scopeChanges);
+					}
+
+					if (root.left.type === 'RelationPredicate') {
+						relationPredicates[scopeChanges - 1].unshift({relationPredicate: root.left, logicalExpression: root.operator, hasEquivalent: false});
+					}
+					else if (root.operator === 'and' && root.left.type === 'Negation' && root.left.formula.type === 'RelationPredicate') {
+						relationPredicates[scopeChanges - 1].unshift({relationPredicate: root.left.formula, logicalExpression: root.operator + ' not', hasEquivalent: false});
+					}
+					else {
+						getAllRelationPredicatesAndLogicalExpressionRec(root.left, scopeChanges);
+					}
+					return;
+				}
+				default: return;
+			}
+		}
+
+		getAllRelationPredicatesAndLogicalExpressionRec(root);
+
+		return relationPredicates;
+	}
+
 	function getRelationPredicate(root: any, domainVar: string): temporaryRelationPredicate[] {
 		const relationPredicates: temporaryRelationPredicate[] = [];
 
@@ -366,6 +410,80 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			return handleRenameColumns(relations[relationPredicate.relation].copy(),relationPredicate)
 		}
 
+		var currentCluster = [...filteredClustersSet[scope]];
+		
+		var resultingSet: RANode = relations[0];
+
+		if (currentCluster.length !== 0) {
+			var relationPredicateObject = currentCluster.shift();
+			var raNode = handleRenameColumns(
+							relations[relationPredicateObject?.relationPredicate.relation!].copy(),
+							relationPredicateObject!.relationPredicate as temporaryRelationPredicate
+						);
+
+			var equivalentsRelPredObjects = currentCluster
+				.filter(rp => rp.relationPredicate.variables.length === relationPredicateObject?.relationPredicate.variables.length
+						&& rp.relationPredicate.variables.every((v, index) => relationPredicateObject?.relationPredicate.variables.includes(v)
+							&& relationPredicateObject?.relationPredicate.variables[index] === v));
+
+			currentCluster = currentCluster.filter(rp => !equivalentsRelPredObjects.includes(rp));
+
+			for (let e of equivalentsRelPredObjects) {
+				var equivalentRaNode = handleRenameColumns(
+					relations[e.relationPredicate.relation!].copy(),
+					e.relationPredicate as temporaryRelationPredicate
+				);
+
+				switch (e.logicalExpression) {
+					case 'and':
+						resultingSet = new Intersect(raNode, equivalentRaNode);
+						break;
+					case 'or':
+						resultingSet = new Union(raNode, equivalentRaNode);
+						break;
+					case 'and not':
+						resultingSet = new Difference(raNode, equivalentRaNode);
+						break;
+					default:
+						throw new Error('Unsupported logical expression: ' + e.logicalExpression);
+				}
+			}
+
+			while (currentCluster.length > 0) {
+				relationPredicateObject = currentCluster.shift();
+
+				equivalentsRelPredObjects = currentCluster
+				.filter(rp => rp.relationPredicate.variables.length === relationPredicateObject?.relationPredicate.variables.length
+						&& rp.relationPredicate.variables.every((v, index) => relationPredicateObject?.relationPredicate.variables.includes(v)
+							&& relationPredicateObject?.relationPredicate.variables[index] === v));
+
+				currentCluster = currentCluster.filter(rp => !equivalentsRelPredObjects.includes(rp));
+
+				for (let e of equivalentsRelPredObjects) {
+					var equivalentRaNode = handleRenameColumns(
+						relations[e.relationPredicate.relation!].copy(),
+						e.relationPredicate as temporaryRelationPredicate
+					);
+
+					switch (e.logicalExpression) {
+						case 'and':
+							resultingSet = new Intersect(resultingSet, equivalentRaNode);
+							break;
+						case 'or':
+							resultingSet = new Union(resultingSet, equivalentRaNode);
+							break;
+						case 'and not':
+							resultingSet = new Difference(resultingSet, equivalentRaNode);
+							break;
+						default:
+							throw new Error('Unsupported logical expression: ' + e.logicalExpression);
+					}
+				}
+			}
+
+			return resultingSet;
+		}
+
 		const columnsRenamed = uniqueRelationPredicates.map((rp: temporaryRelationPredicate) => {
 			var equivalentRelation = relations[rp.relation].copy();
 			if (equivalentRelation === undefined)
@@ -441,6 +559,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			}
 
 			case 'QuantifiedExpression': {
+				scope++;
 				switch (nRaw.quantifier) {
 					case 'exists': {
 						if (!baseRel) {
@@ -600,6 +719,10 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 					throw new Error('Base relation is null!')
 				}
 
+				if (negated) {
+					return baseRel;
+				}
+
 				let currentRelationPredicate = {
 					variables: (nRaw.variables as string[]),
 					relation: (nRaw.relation as string)
@@ -610,7 +733,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			}
 
 			case 'Negation': {
-				if (nRaw.formula.type === 'RelationPredicate') {
+				if (nRaw.formula.type === 'RelationPredicate' && filteredClustersSet.every(c => c.every(rp => rp.relationPredicate !== nRaw.formula))) {
 					throw new Error('Cannot negate RelationPredicate (unsafe formula)')
 				}
 				return rec(nRaw.formula, baseRel, !negated)
@@ -629,6 +752,24 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			}
 		}
 	}
+
+	const clustersSet = getAllRelationPredicatesAndLogicalExpression(astRoot);
+
+	clustersSet.forEach(scope => {
+			for (let i = 0; i < scope.length - 1; i++) {
+				if (scope[i].hasEquivalent) continue;
+				for (let j = i + 1; j < scope.length; j++) {
+					if (scope[i].relationPredicate.variables[0] === scope[j].relationPredicate.variables[0]){
+						scope[i].hasEquivalent = true;
+						scope[j].hasEquivalent = true;
+					}
+				}
+			}
+		});
+
+	const filteredClustersSet = clustersSet.map(scope => scope.filter(rp => rp.hasEquivalent));
+
+	var scope = 0;
 
 	return rec(astRoot)
 }
