@@ -400,6 +400,48 @@ QUnit.module('translate drc ast to relational algebra', () => {
 		})
 	});
 
+	QUnit.module('Set operations', () => {
+		QUnit.test('test intersect between two Relation Predicates', (assert) => {
+			const queryDrc = '{ <x,y> | <x,y> in S and <x,y> in T }';
+			const queryRa = 'pi S.x, S.y (ρ x←b, y←d S intersect ρ x←b, y←d T)';
+
+			const resultDrc = exec_drc(queryDrc).getResult();
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultDrc, resultRa);
+		});
+		QUnit.test('test union between two Relation Predicates', (assert) => {
+			const queryDrc = '{ <x,y> | <x,y> in S or <x,y> in T }';
+			const queryRa = 'pi S.x, S.y (ρ x←b, y←d S union ρ x←b, y←d T)';
+
+			const resultDrc = exec_drc(queryDrc).getResult();
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultDrc, resultRa);
+		});
+		QUnit.test('test difference between two Relation Predicates', (assert) => {
+			const queryDrc = '{ <x,y> | <x,y> in S and not <x,y> in T }';
+			const queryRa = 'pi S.x, S.y (ρ x←b, y←d S except ρ x←b, y←d T)';
+
+			const resultDrc = exec_drc(queryDrc).getResult();
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultDrc, resultRa);
+		});
+
+		QUnit.module('Nested scopes', () => {
+			QUnit.test('test nested scopes', (assert) => {
+				const queryDrc = '{ <a,b,c> | <a,b,c> in R and not ∃r( <r,s> in S and not <r,s> in T and s > 400) }';
+				const queryRa = 'π R.a, R.b, R.c ( ρ a←a, b←b, c←c R - ( ρ a←a, b←b, c←c R ⋉ ( ( ρ r←b, s←d S - ρ r←b, s←d T ) ∩ σ s > 400 ( ρ r←b, s←d S - ρ r←b, s←d T ) ) ) )';
+
+				const resultDrc = exec_drc(queryDrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
+			});
+		});
+	});
+
 	QUnit.module('existencial quantifier operator(∃)', () => {
 		QUnit.test('given ∃ operator with no tuple variable refence and at least one true condition, should return all tuples', (assert) => {
 			const queryDrc = '{ <a,b,c> | <a,b,c> in R and ∃r( <r,s> in S and s > 300) }';
