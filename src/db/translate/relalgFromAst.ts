@@ -319,6 +319,11 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 					else {
 						getAllRelationPredicatesAndLogicalExpressionRec(root.left, scopeChanges);
 					}
+
+					return;
+				}
+				case 'Negation': {
+					getAllRelationPredicatesAndLogicalExpressionRec(root.formula, scopeChanges);
 					return;
 				}
 				default: return;
@@ -392,6 +397,77 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		formula
 	})
 
+	function getResultingSet(currentCluster: RelationPredicateWithLogicalExpression[]) {
+		var resultingSet: RANode = relations[0];
+		var relationPredicateObject = currentCluster.shift();
+		var raNode = handleRenameColumns(
+						relations[relationPredicateObject?.relationPredicate.relation!].copy(),
+						relationPredicateObject!.relationPredicate as temporaryRelationPredicate
+					);
+
+		var equivalentsRelPredObjects = currentCluster
+			.filter(rp => rp.relationPredicate.variables.length === relationPredicateObject?.relationPredicate.variables.length
+					&& rp.relationPredicate.variables.every((v, index) => relationPredicateObject?.relationPredicate.variables.includes(v)
+						&& relationPredicateObject?.relationPredicate.variables[index] === v));
+
+		currentCluster = currentCluster.filter(rp => !equivalentsRelPredObjects.includes(rp));
+
+		for (let e of equivalentsRelPredObjects) {
+			var equivalentRaNode = handleRenameColumns(
+				relations[e.relationPredicate.relation!].copy(),
+				e.relationPredicate as temporaryRelationPredicate
+			);
+
+			switch (e.logicalExpression) {
+				case 'and':
+					resultingSet = new Intersect(raNode, equivalentRaNode);
+					break;
+				case 'or':
+					resultingSet = new Union(raNode, equivalentRaNode);
+					break;
+				case 'and not':
+					resultingSet = new Difference(raNode, equivalentRaNode);
+					break;
+				default:
+					throw new Error('Unsupported logical expression: ' + e.logicalExpression);
+			}
+		}
+
+		while (currentCluster.length > 0) {
+			relationPredicateObject = currentCluster.shift();
+
+			equivalentsRelPredObjects = currentCluster
+			.filter(rp => rp.relationPredicate.variables.length === relationPredicateObject?.relationPredicate.variables.length
+					&& rp.relationPredicate.variables.every((v, index) => relationPredicateObject?.relationPredicate.variables.includes(v)
+						&& relationPredicateObject?.relationPredicate.variables[index] === v));
+
+			currentCluster = currentCluster.filter(rp => !equivalentsRelPredObjects.includes(rp));
+
+			for (let e of equivalentsRelPredObjects) {
+				var equivalentRaNode = handleRenameColumns(
+					relations[e.relationPredicate.relation!].copy(),
+					e.relationPredicate as temporaryRelationPredicate
+				);
+
+				switch (e.logicalExpression) {
+					case 'and':
+						resultingSet = new Intersect(resultingSet, equivalentRaNode);
+						break;
+					case 'or':
+						resultingSet = new Union(resultingSet, equivalentRaNode);
+						break;
+					case 'and not':
+						resultingSet = new Difference(resultingSet, equivalentRaNode);
+						break;
+					default:
+						throw new Error('Unsupported logical expression: ' + e.logicalExpression);
+				}
+			}
+		}
+
+		return resultingSet;
+	}
+
 	function handleDomainVariables(nRaw: any): RANode {
 		const relationPredicates: temporaryRelationPredicate[] = nRaw.variables.flatMap((v: string) => {
 			var relationPredicates = [...getRelationPredicate(nRaw, v)]
@@ -410,78 +486,10 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			return handleRenameColumns(relations[relationPredicate.relation].copy(),relationPredicate)
 		}
 
-		var currentCluster = [...filteredClustersSet[scope]];
+		var currentCluster = [...filteredClustersSet[scope] || []];
 		
-		var resultingSet: RANode = relations[0];
-
 		if (currentCluster.length !== 0) {
-			var relationPredicateObject = currentCluster.shift();
-			var raNode = handleRenameColumns(
-							relations[relationPredicateObject?.relationPredicate.relation!].copy(),
-							relationPredicateObject!.relationPredicate as temporaryRelationPredicate
-						);
-
-			var equivalentsRelPredObjects = currentCluster
-				.filter(rp => rp.relationPredicate.variables.length === relationPredicateObject?.relationPredicate.variables.length
-						&& rp.relationPredicate.variables.every((v, index) => relationPredicateObject?.relationPredicate.variables.includes(v)
-							&& relationPredicateObject?.relationPredicate.variables[index] === v));
-
-			currentCluster = currentCluster.filter(rp => !equivalentsRelPredObjects.includes(rp));
-
-			for (let e of equivalentsRelPredObjects) {
-				var equivalentRaNode = handleRenameColumns(
-					relations[e.relationPredicate.relation!].copy(),
-					e.relationPredicate as temporaryRelationPredicate
-				);
-
-				switch (e.logicalExpression) {
-					case 'and':
-						resultingSet = new Intersect(raNode, equivalentRaNode);
-						break;
-					case 'or':
-						resultingSet = new Union(raNode, equivalentRaNode);
-						break;
-					case 'and not':
-						resultingSet = new Difference(raNode, equivalentRaNode);
-						break;
-					default:
-						throw new Error('Unsupported logical expression: ' + e.logicalExpression);
-				}
-			}
-
-			while (currentCluster.length > 0) {
-				relationPredicateObject = currentCluster.shift();
-
-				equivalentsRelPredObjects = currentCluster
-				.filter(rp => rp.relationPredicate.variables.length === relationPredicateObject?.relationPredicate.variables.length
-						&& rp.relationPredicate.variables.every((v, index) => relationPredicateObject?.relationPredicate.variables.includes(v)
-							&& relationPredicateObject?.relationPredicate.variables[index] === v));
-
-				currentCluster = currentCluster.filter(rp => !equivalentsRelPredObjects.includes(rp));
-
-				for (let e of equivalentsRelPredObjects) {
-					var equivalentRaNode = handleRenameColumns(
-						relations[e.relationPredicate.relation!].copy(),
-						e.relationPredicate as temporaryRelationPredicate
-					);
-
-					switch (e.logicalExpression) {
-						case 'and':
-							resultingSet = new Intersect(resultingSet, equivalentRaNode);
-							break;
-						case 'or':
-							resultingSet = new Union(resultingSet, equivalentRaNode);
-							break;
-						case 'and not':
-							resultingSet = new Difference(resultingSet, equivalentRaNode);
-							break;
-						default:
-							throw new Error('Unsupported logical expression: ' + e.logicalExpression);
-					}
-				}
-			}
-
-			return resultingSet;
+			return getResultingSet(currentCluster);
 		}
 
 		const columnsRenamed = uniqueRelationPredicates.map((rp: temporaryRelationPredicate) => {
@@ -559,7 +567,6 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			}
 
 			case 'QuantifiedExpression': {
-				scope++;
 				switch (nRaw.quantifier) {
 					case 'exists': {
 						if (!baseRel) {
@@ -571,11 +578,21 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 							throw new Error('Relation predicate must be defined!');
 						}
 
-						const uniqueRelationPredicates = [...new Set(relationPredicates)];
+						scope++;
 
-						const relation = relations[uniqueRelationPredicates[0]!.relation].copy()
-						const renamed = handleRenameColumns(relation, uniqueRelationPredicates[0]!)
-						const newBaseRel = new CrossJoin(renamed, baseRel)
+						var currentCluster = [...filteredClustersSet[scope] || []];
+						var newBaseRel = baseRel;
+		
+						if (currentCluster.length !== 0) {
+							newBaseRel = getResultingSet(currentCluster);
+						}
+						else {
+							const uniqueRelationPredicates = [...new Set(relationPredicates)];	
+							const relation = relations[uniqueRelationPredicates[0]!.relation].copy()
+							const renamed = handleRenameColumns(relation, uniqueRelationPredicates[0]!)
+
+							newBaseRel = new CrossJoin(renamed, baseRel)
+						}
 
 						if (negated) {
 							const right = rec(nRaw.formula, newBaseRel, false)
