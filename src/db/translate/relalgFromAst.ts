@@ -585,6 +585,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		
 						if (currentCluster.length !== 0) {
 							newBaseRel = getResultingSet(currentCluster);
+							newBaseRel = new CrossJoin(newBaseRel, baseRel);
 						}
 						else {
 							const uniqueRelationPredicates = [...new Set(relationPredicates)];	
