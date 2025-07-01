@@ -12,6 +12,19 @@ import * as relalgjs from '../relalg';
 import { Schema } from '../exec/Schema';
 import { assert } from 'node_modules/@types/qunit';
 
+const srcSchemaQ: Schema = new Schema();
+srcSchemaQ.addColumn('a', null, 'number');
+srcSchemaQ.addColumn('b', null, 'string');
+srcSchemaQ.addColumn('d', null, 'string');
+
+const srcTableQ: Relation = new Relation('Q').setSchema(srcSchemaQ);
+srcTableQ.addRows([
+    [1, 'a', 'd'],
+    [3, 'c', 'v'],
+    [4, 'd', 'j'],
+    [5, 'd', 'f'],
+    [6, 'e', 'k']
+]);
 
 const srcSchemaR: Schema = new Schema();
 srcSchemaR.addColumn('a', null, 'number');
@@ -54,10 +67,12 @@ srcTableT.addRows([
 ]);
 
 const relations: {
+	Q: Relation,
 	R: Relation,
 	S: Relation,
 	T: Relation,
 } = {
+	Q: srcTableQ,
 	R: srcTableR,
 	S: srcTableS,
 	T: srcTableT,
@@ -433,6 +448,24 @@ QUnit.module('translate drc ast to relational algebra', () => {
 			QUnit.test('test nested scopes', (assert) => {
 				const queryDrc = '{ <a,b,c> | <a,b,c> in R and not ∃r( <r,s> in S and not <r,s> in T and s > 400) }';
 				const queryRa = 'π R.a, R.b, R.c ( ρ a←a, b←b, c←c R - ( ρ a←a, b←b, c←c R ⋉ ( ( ρ r←b, s←d S - ρ r←b, s←d T ) ∩ σ s > 400 ( ρ r←b, s←d S - ρ r←b, s←d T ) ) ) )';
+
+				const resultDrc = exec_drc(queryDrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
+			});
+			QUnit.test('test nested scopes with connecting predicate', (assert) => {
+				const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T and ∃r(<r,s,t> in R and s = x)}';
+				const queryRa = 'π S.x, S.y ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∩ ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ⋉ σ s = x ( ρ r←a, s←b, t←c R ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ) ) ';
+
+				const resultDrc = exec_drc(queryDrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
+			});
+			QUnit.test('test nested scopes with connecting predicate and set operation', (assert) => {
+				const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T and ∃r(<r,s,t> in R and <r,s,t> in Q and s = x)}';
+				const queryRa = 'π S.x, S.y ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∩ ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ⋉ ( ( ( ρ r←a, s←b, t←c R ∩ ρ r←a, s←b, t←d Q ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ∩ σ s = x ( ( ρ r←a, s←b, t←c R ∩ ρ r←a, s←b, t←d Q ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ) ) ) ';
 
 				const resultDrc = exec_drc(queryDrc).getResult();
 				const resultRa = exec_ra(queryRa).getResult();
