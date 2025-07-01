@@ -412,7 +412,9 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 		currentCluster = currentCluster.filter(rp => !equivalentsRelPredObjects.includes(rp));
 
-		for (let e of equivalentsRelPredObjects) {
+		if (equivalentsRelPredObjects.length >= 1) {
+			var e = equivalentsRelPredObjects[0];
+
 			var equivalentRaNode = handleRenameColumns(
 				relations[e.relationPredicate.relation!].copy(),
 				e.relationPredicate as temporaryRelationPredicate
@@ -427,6 +429,29 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 					break;
 				case 'and not':
 					resultingSet = new Difference(raNode, equivalentRaNode);
+					break;
+				default:
+					throw new Error('Unsupported logical expression: ' + e.logicalExpression);
+			}
+		}
+
+		for (let i = 1; i < equivalentsRelPredObjects.length; i++) {
+			var e = equivalentsRelPredObjects[i];
+			
+			var equivalentRaNode = handleRenameColumns(
+				relations[e.relationPredicate.relation!].copy(),
+				e.relationPredicate as temporaryRelationPredicate
+			);
+
+			switch (e.logicalExpression) {
+				case 'and':
+					resultingSet = new Intersect(resultingSet, equivalentRaNode);
+					break;
+				case 'or':
+					resultingSet = new Union(resultingSet, equivalentRaNode);
+					break;
+				case 'and not':
+					resultingSet = new Difference(resultingSet, equivalentRaNode);
 					break;
 				default:
 					throw new Error('Unsupported logical expression: ' + e.logicalExpression);

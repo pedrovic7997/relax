@@ -443,6 +443,15 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 			assert.deepEqual(resultDrc, resultRa);
 		});
+		QUnit.test('test multiple Relation Predicate', (assert) => {
+			const queryDrc = '{ <x,y> | <x,y> in S and not <x,y> in T }';
+			const queryRa = 'π S.x, S.y ( ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∪ ρ x←b, y←d S ) ∪ ( ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∪ ρ x←b, y←d S ) ⋉ ρ x←b, y←d S ) ) ';
+
+			const resultDrc = exec_drc(queryDrc).getResult();
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultDrc, resultRa);
+		});
 
 		QUnit.module('Nested scopes', () => {
 			QUnit.test('test nested scopes', (assert) => {
@@ -466,6 +475,15 @@ QUnit.module('translate drc ast to relational algebra', () => {
 			QUnit.test('test nested scopes with connecting predicate and set operation', (assert) => {
 				const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T and ∃r(<r,s,t> in R and <r,s,t> in Q and s = x)}';
 				const queryRa = 'π S.x, S.y ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∩ ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ⋉ ( ( ( ρ r←a, s←b, t←c R ∩ ρ r←a, s←b, t←d Q ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ∩ σ s = x ( ( ρ r←a, s←b, t←c R ∩ ρ r←a, s←b, t←d Q ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ) ) ) ';
+
+				const resultDrc = exec_drc(queryDrc).getResult();
+				const resultRa = exec_ra(queryRa).getResult();
+
+				assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
+			});
+			QUnit.test('test nested scopes with multiple set operation', (assert) => {
+				const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T and ∃r(<r,s> in T or <r,s> in S and <r,s> in T and r = x)}';
+				const queryRa = 'π S.x, S.y ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∩ ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ⋉ ( ( ( ( ρ r←b, s←d T ∪ ρ r←b, s←d S ) ∩ ρ r←b, s←d T ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ∩ σ r = x ( ( ( ρ r←b, s←d T ∪ ρ r←b, s←d S ) ∩ ρ r←b, s←d T ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ) ) ) ';
 
 				const resultDrc = exec_drc(queryDrc).getResult();
 				const resultRa = exec_ra(queryRa).getResult();
