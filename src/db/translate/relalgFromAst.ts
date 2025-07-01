@@ -695,6 +695,10 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 					}
 
 					case 'or': {
+						if (nRaw.left.type === 'RelationPredicate' && nRaw.right.type === 'RelationPredicate') {
+							return baseRel
+						}
+						
 						// NOTE: ¬(p ∨ q) ≡ ¬p ∧ ¬q
 						if (negated) {
 							return rec(and(not(nRaw.left), not((nRaw.right))), baseRel)
