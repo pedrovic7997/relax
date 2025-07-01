@@ -444,7 +444,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 			assert.deepEqual(resultDrc, resultRa);
 		});
 		QUnit.test('test multiple Relation Predicate', (assert) => {
-			const queryDrc = '{ <x,y> | <x,y> in S and not <x,y> in T }';
+			const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T or <x,y> in S}';
 			const queryRa = 'π S.x, S.y ( ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∪ ρ x←b, y←d S ) ∪ ( ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∪ ρ x←b, y←d S ) ⋉ ρ x←b, y←d S ) ) ';
 
 			const resultDrc = exec_drc(queryDrc).getResult();
