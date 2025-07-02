@@ -335,7 +335,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return relationPredicates;
 	}
 
-	function getRelationPredicate(root: any, domainVar: string): temporaryRelationPredicate[] {
+	function getRelationPredicate(root: any, domainVar: string, ignoreNegation: boolean = false): temporaryRelationPredicate[] {
 		const relationPredicates: temporaryRelationPredicate[] = [];
 
 		function getRelationPredicateRec(root: any, domainVar: string, scopeChanges = 0): void {
@@ -356,7 +356,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 					return;
 				}
 				case 'Negation': {
-					getRelationPredicateRec(root.formula, domainVar, scopeChanges);
+					if (!ignoreNegation) getRelationPredicateRec(root.formula, domainVar, scopeChanges);
 					return;
 				}
 				case 'QuantifiedExpression': {
@@ -547,7 +547,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	}
 
 	function getColumnData(nRaw: any, variable: string): Column {
-		const predicates = getRelationPredicate(nRaw, variable)
+		const predicates = getRelationPredicate(nRaw, variable, true);
 		if (predicates.length === 0) {
 			throw new Error('Domain variable must be declared in some Relation predicate!')
 		}
@@ -815,6 +815,14 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		});
 
 	const filteredClustersSet = clustersSet.map(scope => scope.filter(rp => rp.hasEquivalent));
+
+	filteredClustersSet.forEach(scope => {
+		if (scope.length > 1 && scope[0].logicalExpression === 'and not') {
+			var replace = scope[0];
+			scope[0] = scope[1];
+			scope[1] = replace;
+		}
+	});
 
 	var scope = 0;
 

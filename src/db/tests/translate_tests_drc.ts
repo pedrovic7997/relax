@@ -452,6 +452,15 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 			assert.deepEqual(resultDrc, resultRa);
 		});
+		QUnit.test('test difference between two Relation Predicate out of order', (assert) => {
+			const queryDrc = '{<x,y> | not <x,y> in S and <x,y> in T}';
+			const queryRa = 'π T.x, T.y ( ρ x←b, y←d T - ρ x←b, y←d S ) ';
+
+			const resultDrc = exec_drc(queryDrc).getResult();
+			const resultRa = exec_ra(queryRa).getResult();
+
+			assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
+		});
 
 		QUnit.module('Nested scopes', () => {
 			QUnit.test('test nested scopes', (assert) => {
