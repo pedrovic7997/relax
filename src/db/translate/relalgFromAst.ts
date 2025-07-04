@@ -194,6 +194,27 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return outerRoot;
 	}
 
+	function checkForQuantityOfNegatedRelationPredicates(): void {
+		let negatedRelPredCount = 0;
+		let relPredCount = 0;
+
+		filteredClustersSet.forEach(clustersSet => {
+			clustersSet.forEach(cluster => {
+				if (cluster.logicalExpression === 'and not') {
+					negatedRelPredCount++;
+					relPredCount++;
+				}
+				else {
+					relPredCount++;
+				}
+			});
+
+			if (negatedRelPredCount === relPredCount && clustersSet.length > 0) {
+				throw new ExecutionError("Negated Relation Predicate left unmatched for set operation (unsafe formula).");
+			}
+		});
+	}
+
 	function checkForUndeclaredVariables(
 		root: any, 
 		quantifiedExpressions: quantifiedExpressionsWithScope[]
@@ -547,9 +568,9 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	}
 
 	function getColumnData(nRaw: any, variable: string): Column {
-		const predicates = getRelationPredicate(nRaw, variable, true);
+		const predicates = getRelationPredicate(nRaw, variable, filteredClustersSet[0].length !== 0);
 		if (predicates.length === 0) {
-			throw new Error('Domain variable must be declared in some Relation predicate!')
+			throw new Error('Domain variable must be declared in some non-negated Relation predicate!')
 		}
 
 		const rel = relations[predicates[0].relation].copy() as Relation
@@ -566,6 +587,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			checkForUndeclaredVariables(nRaw, [...quantifiedExpressions]);
 			checkForRepeatedVariableInQuantifiers(nRaw, [...quantifiedExpressions]);
 			checkForUnsuportedRelationPredicateFormats(nRaw, [...quantifiedExpressions]);
+			checkForQuantityOfNegatedRelationPredicates();
 		}
 
 		switch (nRaw.type) {
