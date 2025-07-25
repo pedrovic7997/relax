@@ -339,6 +339,37 @@ export class ValueExprGeneric extends ValueExpr {
 					}
 				}
 				return null;
+			case 'cast':
+				const value = this._args[0].evaluate(tupleA, tupleB, row, statementSession);
+				const type = this._args[1].evaluate(tupleA, tupleB, row, statementSession);
+				if (value === null || type === null) {
+					return null;
+				}
+				else if (type === 'string') {
+					return String(value);
+				}
+				else if (type === 'number') {
+					const numberVal = Number(value);
+					if (!Number.isInteger(numberVal)) {
+						this.throwExecutionError(i18n.t('db.messages.exec.error-cast-failed', {
+							expr: value,
+							type: 'number',
+						}));
+					}
+					return numberVal;
+				}
+				else if (type === 'boolean') {
+					if (value.toString() === 'true') return true;
+					else if (value.toString() === 'false') return false;
+
+					this.throwExecutionError(i18n.t('db.messages.exec.error-cast-failed', {
+						expr: value,
+						type: 'boolean',
+					}));
+				}
+				else if (type === 'date') {
+					return this._parseIsoDate(value);
+				}
 			default:
 				throw new Error('this should not happen!');
 		}
@@ -672,6 +703,33 @@ export class ValueExprGeneric extends ValueExpr {
 				else {
 					return r.split('').reverse().join('');
 				}
+			case 'substring':
+				const s = this._args[0].evaluate(tupleA, tupleB, row, statementSession);
+				const start = this._args[1].evaluate(tupleA, tupleB, row, statementSession);
+				const length = this._args[2]?.evaluate(tupleA, tupleB, row, statementSession);
+
+				if (s === null || start === null) {
+					return null;
+				}
+
+				const sLength = s.length;
+
+  				// 1-based indexing: MySQL starts at 1
+  				let startIndex = start >= 0 ? start - 1 : sLength + start;
+
+				// Clamp startIndex to [0, sLength]
+				if (startIndex < 0) startIndex = 0;
+				if (startIndex > sLength) return '';
+
+				// If length is not provided, return to end
+				if (length === undefined) {
+					return s.substring(startIndex);
+				}
+
+				// If length is negative, return empty string (MySQL behavior)
+  				if (length < 0) return '';
+
+				return s.substring(startIndex, startIndex + length);
 			default:
 				throw new Error('this should not happen!');
 		}
@@ -710,6 +768,17 @@ export class ValueExprGeneric extends ValueExpr {
 					return null;
 				}
 				return valueA / valueB;
+			case 'power':
+				if (valueA === null || valueB === null) {
+					return null;
+				}
+				return Math.pow(valueA, valueB);
+			case 'log':
+				if (valueA === null || valueA < 2 || valueB === null || valueB <= 0) {
+					return null;
+				}
+				return Math.log(valueB) / Math.log(valueA);
+	
 			case 'mod':
 				if (valueA === null || valueB === null) {
 					return null;
@@ -739,6 +808,24 @@ export class ValueExprGeneric extends ValueExpr {
 					return null;
 				}
 				return Math.round(valueA);
+
+			case 'sqrt':
+				if (valueA === null || valueA < 0) {
+					return null;
+				}
+				return Math.sqrt(valueA);
+
+			case 'exp':
+				if (valueA === null) {
+					return null;
+				}
+				return Math.exp(valueA);
+
+			case 'ln':
+				if (valueA === null || valueA <= 0) {
+					return null;
+				}
+				return Math.log(valueA);
 
 			case 'minus':
 				if (valueA === null) {
@@ -897,6 +984,21 @@ export class ValueExprGeneric extends ValueExpr {
 					}
 				}
 				break;
+			case 'cast':
+				this._args[0].check(schemaA, schemaB);
+				this._args[1].check(schemaA, schemaB);
+				const type = this._args[1]._args[0];
+
+				if (type !== 'string' && type !== 'number' && type !== 'boolean' && type !== 'date') {
+					this.throwExecutionError(i18n.t('db.messages.exec.error-function-expects-type', {
+						func: 'CAST()',
+						expected: ['string', 'number', 'boolean', 'date'],
+						given: [type],
+					}));
+				}
+
+				this._dataTypeCalculated = type;
+				break;
 			default:
 				throw new Error('this should not happen!');
 		}
@@ -950,8 +1052,42 @@ export class ValueExprGeneric extends ValueExpr {
 					if (this._dataType === 'null' && dataType !== 'null') {
 						this._dataTypeCalculated = dataType;
 					}
-					else if (dataType !== 'null' && this._dataType !== dataType) {
-						this.throwExecutionError(i18n.t('db.messages.exec.error-function-expects-arguments-of-same-type', {func: 'CONCAT()'}));
+					// else if (dataType !== 'null' && this._dataType !== dataType) {
+					// 	this.throwExecutionError(i18n.t('db.messages.exec.error-function-expects-arguments-of-same-type', {func: 'CONCAT()'}));
+					// }
+				}
+				break;
+			case 'substring':
+				// arguments must be of type string, number and number, or null
+				this._args[0]?.check(schemaA, schemaB);
+				const typeStrSub = this._args[0]?.getDataType();
+				this._args[1]?.check(schemaA, schemaB);
+				const typeStart = this._args[1]?.getDataType();
+
+				// Check whether there are 2 or 3 arguments
+				if (this._args.length === 2) {
+					if ( (typeStrSub !== 'string' && typeStrSub !== 'null') ||
+						(typeStart !== 'number' && typeStart !== 'null')) {
+						this.throwExecutionError(i18n.t('db.messages.exec.error-function-expects-type', {
+							func: 'SUBSTRING()',
+							expected: ['string', 'number'],
+							given: [typeStrSub, typeStart],
+						}));
+					}
+				}
+				// Validate 3rd argument if present: must be number or null
+				else {
+					this._args[2]?.check(schemaA, schemaB);
+					const typeLength = this._args[2]?.getDataType();
+
+					if ( (typeStrSub !== 'string' && typeStrSub !== 'null') ||
+						(typeStart !== 'number' && typeStart !== 'null') ||
+						(typeLength !== 'number' && typeLength !== 'null') ) {
+						this.throwExecutionError(i18n.t('db.messages.exec.error-function-expects-type', {
+							func: 'SUBSTRING()',
+							expected: ['string', 'number', 'number'],
+							given: [typeStrSub, typeStart, typeLength],
+						}));
 					}
 				}
 				break;
@@ -970,12 +1106,17 @@ export class ValueExprGeneric extends ValueExpr {
 			case 'sub':
 			case 'mul':
 			case 'div':
+			case 'power':
+			case 'log':
 			case 'mod':
 				return this._checkArgsDataType(schemaA, schemaB, ['number', 'number']);
 			case 'abs':
 			case 'floor':
 			case 'ceil':
 			case 'round':
+			case 'sqrt':
+			case 'exp':
+			case 'ln':
 			case 'minus':
 				return this._checkArgsDataType(schemaA, schemaB, ['number']);
 			case 'strlen':
@@ -1057,6 +1198,11 @@ export class ValueExprGeneric extends ValueExpr {
 				case 'ceil':
 				case 'floor':
 				case 'round':
+				case 'sqrt':
+				case 'power':
+				case 'exp':
+				case 'ln':
+				case 'log':
 				case 'year':
 				case 'month':
 				case 'dayofmonth':
@@ -1066,10 +1212,14 @@ export class ValueExprGeneric extends ValueExpr {
 				case 'adddate':
 				case 'subdate':
 				case 'concat':
+				case 'coalesce':
 				case 'upper':
 				case 'lower':
 				case 'replace':	
 				case 'reverse':
+				case 'repeat':
+				case 'substring':
+				case 'cast':
 				case 'date':
 					return printFunction.call(this, _func.toUpperCase());
 				case 'strlen':

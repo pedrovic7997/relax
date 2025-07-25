@@ -103,6 +103,10 @@ export const langPT = {
     'calc.editors.ra.button-download': 'Download',
     'calc.editors.ra.button-download-csv': 'Resultado',
     'calc.editors.ra.button-download-query': 'Query',
+    'calc.editors.ra.button-zoom-in': 'Aumentar zoom',
+    'calc.editors.ra.button-zoom-out': 'Diminuir zoom',
+    'calc.editors.ra.button-zoom-reset': 'Redefinir zoom',
+    'calc.editors.ra.button-zoom-center': 'Alinhar à visualização',
     'db.messages.parser.error-sql-group-by-missing':
       'group by est\u00e1 faltando',
     'db.messages.exec.error-could-not-compare-different-types':
@@ -135,6 +139,8 @@ export const langPT = {
       'renomear rela\u00e7\u00e3o / renomear colunas',
     'calc.menu.datasets': 'Datasets',
     'calc.maintainer-groups.uibk': 'University of Innsbruck',
+    'calc.maintainer-groups.ufes': 'Universidade Federal do Esp\u00edrito Santo',
+    'calc.maintainer-groups.savben': 'Istituto di Istruzione Superiore Savoia Benincasa',
     'calc.editors.ra.toolbar.natural-join': 'natural join / \u03b8-join',
     'db.messages.translate.warning-distinct-missing':
       'DISTINCT est\u00e1 faltando',
@@ -168,6 +174,8 @@ export const langPT = {
       '<div><b>(</b> A <b class="math">) \u25b7 (</b> B <b>)</b></div>',
     'db.messages.exec.error-invalid-date-format':
       '"{{str}}" n\u00e3o \u00e9 uma data v\u00e1lida; formato esperado: YYYY-MM-DD',
+    'db.messages.exec.error-cast-failed':
+      '"{{expr}}" n\u00e3o pode ser convertido para tipo {{type}}',
     'calc.editors.ra.toolbar.multi-line-comment-content':
       '<b>/* este \u00e9 um coment\u00e1rio longo,<br>muito longo*/</b><br><span class="math">&pi;</span> a, b A',
     'db.messages.parser.error-sql-negative-limit':

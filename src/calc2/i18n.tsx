@@ -12,6 +12,7 @@ import langEN from '../locales/en.json';
 import langES from '../locales/es.json';
 import langKR from '../locales/kr.json';
 import langPT from '../locales/pt.json';
+import langIT from '../locales/it.json';
 
 export type LanguageKeys = keyof typeof langEN;
 
@@ -33,6 +34,9 @@ export const i18n = i18next
 			},
 			pt: {
 				translations: langPT,
+			},
+			it: {
+				translations: langIT,
 			},
 		},
 		fallbackLng: 'en',

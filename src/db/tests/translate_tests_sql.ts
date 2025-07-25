@@ -952,3 +952,459 @@ QUnit.test('whitespace(s) between unary function and opening parenthesis', funct
 
 	assert.deepEqual(exec_sql(query).getResult(), exec_ra(queryRef).getResult());
 });
+
+QUnit.test('test sqrt negative number', function (assert) {
+	const query = 'select a, sqrt(-4) as k from R';
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   null
+		3,   null
+		4,   null
+		5,   null
+		6,   null
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test sqrt of zero', function (assert) {
+	const query = "SELECT sqrt(0) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k
+		0
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test sqrt of one', function (assert) {
+	const query = "select sqrt(1) as k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k
+		1
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test sqrt of one hundred', function (assert) {
+	const query = "select a, sqrt(100) as k from R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   10
+		3,   10
+		4,   10
+		5,   10
+		6,   10
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test e raised to the power of 0', function (assert) {
+	const query = "select a, exp(0) as k from R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   1
+		3,   1
+		4,   1
+		5,   1
+		6,   1
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test e raised to the power of 1', function (assert) {
+	const query = "select a, exp(1) as k from R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   2.718281828459045
+		3,   2.718281828459045
+		4,   2.718281828459045
+		5,   2.718281828459045
+		6,   2.718281828459045
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test e raised to the power of 2', function (assert) {
+	const query = "select a, exp(2) as k from R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   7.38905609893065
+		3,   7.38905609893065
+		4,   7.38905609893065
+		5,   7.38905609893065
+		6,   7.38905609893065
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test column raised to the power of 0', function (assert) {
+	const query = "select a, power(a, 0) as k from R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   1
+		3,   1
+		4,   1
+		5,   1
+		6,   1
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test column raised to the power of 1', function (assert) {
+	const query = "select a, power(a, 1) as k from R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   1
+		3,   3
+		4,   4
+		5,   5
+		6,   6
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test column raised to the power of 2', function (assert) {
+	const query = "select a, power(a, 2) as k from R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   1
+		3,   9
+		4,   16
+		5,   25
+		6,   36
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test natural logarithm of a negative number', function (assert) {
+	const query = "SELECT a, ln(-1) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   null
+		3,   null
+		4,   null
+		5,   null
+		6,   null
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test natural logarithm of 0', function (assert) {
+	const query = "SELECT a, ln(0) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   null
+		3,   null
+		4,   null
+		5,   null
+		6,   null
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test natural logarithm of 1', function (assert) {
+	const query = "SELECT a, ln(exp(1)) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		R.a, k:number
+		1,   1
+		3,   1
+		4,   1
+		5,   1
+		6,   1
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test natural logarithm of 2', function (assert) {
+	const query = "SELECT ln(exp(2)) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		2
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test logarithm, base 2, of -1', function (assert) {
+	const query = "SELECT log(2, -1) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		null
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test logarithm, base 2, of 0', function (assert) {
+	const query = "SELECT log(2, 0) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		null
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test logarithm, base 2, of 1', function (assert) {
+	const query = "SELECT log(2, 1) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		0
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test logarithm, base -1, of 16', function (assert) {
+	const query = "SELECT log(-1, 16) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		null
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test logarithm, base 0, of 16', function (assert) {
+	const query = "SELECT log(0, 16) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		null
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test logarithm, base 1, of 16', function (assert) {
+	const query = "SELECT log(1, 16) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		null
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test logarithm, base 2, of 4', function (assert) {
+	const query = "SELECT log(2, 4) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		2
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test logarithm, base 10, of 1000', function (assert) {
+	const query = "SELECT round(log(10, 1000)) AS k FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		k:number
+		3
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 2 args comma style', function (assert) {
+	const query = "select SUBSTRING('Quadratically',5) as str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		'ratically'
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 2 args from style', function (assert) {
+	const query = "SELECT SUBSTRING('foobarbar' FROM 4) AS str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		'barbar'
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 2 args negative pos', function (assert) {
+	const query = "select SUBSTRING('Sakila', -3) as str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		'ila'
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 3 args comma style', function (assert) {
+	const query = "SELECT SUBSTRING('Quadratically',5,6) AS str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		'ratica'
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 3 args from/for style', function (assert) {
+	const query = "select SUBSTRING('Quadratically' FROM 5 for 6) as str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		'ratica'
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 3 args negative pos', function (assert) {
+	const query = "SELECT substring('Sakila', -5, 3) as str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		'aki'
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 3 args pos equals to 0', function (assert) {
+	const query = "select substring('abcdef', 0, 5) AS str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		'abcde'
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 3 args pos greater than string length', function (assert) {
+	const query = "select substring('abcdef', 100, 5) as str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		''
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 3 args negative length', function (assert) {
+	const query = "SELECT SUBSTRING('abcdef', 5, -3) AS str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		''
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 3 args length equals to 0', function (assert) {
+	const query = "select SUBSTRING('abcdef', 5, 0) as str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		''
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test substring 3 args length greater than string length', function (assert) {
+	const query = "select substring('abcdef', 5, 10) AS str FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string
+		'ef'
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});
+
+QUnit.test('test cast function', function (assert) {
+	const query = "select cast(a as string) as str, cast('100' as number) AS n, cast('false' as boolean) as bool, cast('2025-04-16' as date) AS dt FROM R";
+	const root = exec_sql(query);
+
+	const ref = exec_ra(`{
+		str:string	n:number	bool:boolean	dt:date
+		'1',	100,	false,	2025-04-16
+		'3',	100,	false,	2025-04-16
+		'4',	100,	false,	2025-04-16
+		'5',	100,	false,	2025-04-16
+		'6',	100,	false,	2025-04-16
+	}`);
+
+	assert.deepEqual(root.getResult(), ref.getResult());
+});

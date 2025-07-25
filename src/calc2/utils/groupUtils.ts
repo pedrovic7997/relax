@@ -9,8 +9,12 @@ import { parseRelalgGroup, relalgFromRelalgAstNode, replaceVariables } from 'db/
 import * as jQuery from 'jquery';
 import {string} from "prop-types";
 
+const ld_sb: any = require('../data/sb.txt');
+const ld_ufes: any = require('../data/ufes.txt');
 const ld: any = require('../data/uibk.txt');
 const LOCAL_DATA: { [id: string]: string } = {
+	'sb': ld_sb.default ? ld_sb.default : '',
+  'ufes': ld_ufes.default ? ld_ufes.default : '',
   'uibk': ld.default ? ld.default : '',
 };
 
@@ -179,7 +183,8 @@ export function loadGroupsFromSource(source: GroupSourceType, id: string, mainta
               reject(new Error('gist ' + id + ' not found'));
             },
           },
-          async: true,
+          timeout: 10000,
+          async: false,
         });
         break;
       }

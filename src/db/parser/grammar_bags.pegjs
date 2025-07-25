@@ -242,6 +242,16 @@ unqualifiedColumnName
 		return a;
 	}
 
+columnAsterisk
+= relAlias:(relationName '.')? '*'
+	{
+		return {
+			type: 'column',
+			name: '*',
+			relAlias: relAlias ? relAlias[0] : null
+		};
+	}
+
 columnName
 = relAlias:(relationName '.')? name:unqualifiedColumnName
 	{
@@ -448,6 +458,11 @@ namedColumnExpr
 	{
 		return a;
 	}
+/ col:columnAsterisk
+	{
+		col.alias = null;
+		return col;
+	}
 
 // list of columns (kd.id, kd.name, test) e.g. for the projection
 listOfNamedColumnExpressions
@@ -544,14 +559,14 @@ listOfOrderByArgs
 
 
 aggFunction
-= func:$('sum'i / 'count'i / 'avg'i / 'min'i / 'max'i) '(' _ col:columnName _ ')'
+= func:$('sum'i / 'count'i / 'avg'i / 'min'i / 'max'i) _ '(' _ col:columnName _ ')'
 	{
 		return {
 			aggFunction: func.toUpperCase(),
 			col: col
 		};
 	}
-/ 'count(*)'i
+/ 'count'i _ '(' _ '*' _ ')'
 	{
 		return {
 			aggFunction: 'COUNT_ALL',
@@ -1241,9 +1256,36 @@ tableRow
 		return t;
 	}
 
+tableDum
+= '{' _ '}' // relation of degree zero and cardinality zero
+	{
+		return {
+			type: 'table',
+			name: '_inlineRelation'+(inlineTableNum++),
+			columns: [],
+			rows: [],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
+tableDee
+= '{' _ '(' _ ')' _ '}' // relation of degree zero and cardinality one
+	{
+		return {
+			type: 'table',
+			name: '_inlineRelation'+(inlineTableNum++),
+			columns: [],
+			rows: [[]],
+
+			codeInfo: getCodeInfo()
+		};
+	}
 
 table
-= '{' _ cols:tableHeader _sl trows:(endOfLine _ tableRow _sl)* _ '}'
+= tableDum
+/ tableDee
+/ '{' _ cols:tableHeader _sl trows:(endOfLine _ tableRow _sl)* _ '}'
 	{
 		var numCols = cols.length;
 
@@ -1436,7 +1478,7 @@ expr_rest_boolean_comparison
 			codeInfo: getCodeInfo()
 		};
 	}
-/ _ o:('like'i / 'ilike'i) _ right:valueExprConstants
+/ _ o:('like'i / 'ilike'i / 'regexp'i / 'rlike'i) _ right:valueExprConstants
 	{
 		if(right.datatype !== 'string'){
 			error(t('db.messages.parser.error-valueexpr-like-operand-no-string'));
@@ -1522,8 +1564,9 @@ valueExprFunctionsNary
 = func:(
 	('coalesce'i { return ['coalesce', 'null']; })
 	/ ('concat'i { return ['concat', 'string']; })
+	/ ('replace'i { return ['replace', 'string']; })
 )
-'(' _ arg0:valueExpr _ argn:(',' _ valueExpr _ )* ')'
+_ '(' _ arg0:valueExpr _ argn:(',' _ valueExpr _ )* ')'
 	{
 		var args = [arg0];
 		for(var i = 0; i < argn.length; i++){
@@ -1540,17 +1583,43 @@ valueExprFunctionsNary
 		};
 	}
 
-valueExprFunctionsBinary
+substringTernaryCommaStyle
 = func:(
-	('adddate'i { return ['adddate', 'date']; })
-	/ ('subdate'i { return ['subdate', 'date']; })
-	/ ('mod'i { return ['mod', 'number']; })
-	/ ('add'i { return ['add', 'number']; })
-	/ ('sub'i { return ['sub', 'number']; })
-	/ ('mul'i { return ['mul', 'number']; })
-	/ ('div'i { return ['div', 'number']; })
+	('substring'i { return ['substring', 'string']; })
 )
-'(' _ arg0:valueExpr _ ',' _ arg1:valueExpr _ ')'
+_ '(' _ arg0:valueExpr _ ',' _ arg1:valueExpr _ ',' _ arg2:valueExpr _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, arg1, arg2],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
+substringTernaryFromForStyle
+= func:(
+	('substring'i { return ['substring', 'string']; })
+)
+_ '(' _ arg0:valueExpr _ 'from'i _ arg1:valueExpr _ 'for'i _ arg2:valueExpr _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, arg1, arg2],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
+substringBinaryCommaStyle
+= func: (
+	('substring'i { return ['substring', 'string']; })
+)
+_ '(' _ arg0:valueExpr _ ',' _ arg1:valueExpr _ ')'
 	{
 		return {
 			type: 'valueExpr',
@@ -1562,20 +1631,89 @@ valueExprFunctionsBinary
 		};
 	}
 
+substringBinaryFromForStyle
+= func: (
+	('substring'i { return ['substring', 'string']; })
+)
+_ '(' _ arg0:valueExpr _ 'from'i _ arg1:valueExpr _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, arg1],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
+valueExprFunctionsTernary
+= substringTernaryCommaStyle
+/ substringTernaryFromForStyle
+
+valueExprFunctionsBinary
+= substringBinaryCommaStyle
+  / substringBinaryFromForStyle
+  / func:(
+	('adddate'i { return ['adddate', 'date']; })
+	/ ('subdate'i { return ['subdate', 'date']; })
+	/ ('mod'i { return ['mod', 'number']; })
+	/ ('add'i { return ['add', 'number']; })
+	/ ('sub'i { return ['sub', 'number']; })
+	/ ('mul'i { return ['mul', 'number']; })
+	/ ('div'i { return ['div', 'number']; })
+	/ ('power'i { return ['power', 'number']; })
+	/ ('log'i { return ['log', 'number']; })
+	/ ('repeat'i { return ['repeat', 'string']; })
+)
+_ '(' _ arg0:valueExpr _ ',' _ arg1:valueExpr _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, arg1],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+/ func:(
+	('cast'i { return ['cast', 'null']; })
+)
+_ '(' _ arg0:valueExpr _ 'as'i _ arg1:('string'i / 'number'i / 'date'i / 'boolean'i) _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, {
+				datatype: 'string',
+				func: 'constant',
+				args: [arg1],
+				codeInfo: getCodeInfo()
+			}],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
 valueExprFunctionsUnary
 = func:(
 	('upper'i { return ['upper', 'string']; })
 	/ ('ucase'i { return ['upper', 'string']; })
 	/ ('lower'i { return ['lower', 'string']; })
 	/ ('lcase'i { return ['lower', 'string']; })
+	/ ('reverse'i { return ['reverse', 'string']; })
 	/ ('length'i { return ['strlen', 'number']; })
 	/ ('abs'i { return ['abs', 'number']; })
 	/ ('floor'i { return ['floor', 'number']; })
 	/ ('ceil'i { return ['ceil', 'number']; })
 	/ ('round'i { return ['round', 'number']; })
+	/ ('sqrt'i { return ['sqrt', 'number']; })
+	/ ('exp'i { return ['exp', 'number']; })
+	/ ('ln'i { return ['ln', 'number']; })
 
 	/ ('date'i { return ['date', 'date']; })
-
 	/ ('year'i { return ['year', 'number']; })
 	/ ('month'i { return ['month', 'number']; })
 	/ ('day'i { return ['dayofmonth', 'number']; })
@@ -1584,7 +1722,7 @@ valueExprFunctionsUnary
 	/ ('second'i { return ['second', 'number']; })
 	/ ('dayofmonth'i { return ['dayofmonth', 'number']; })
 )
-'(' _ arg0:valueExpr _ ')'
+_ '(' _ arg0:valueExpr _ ')'
 	{
 		return {
 			type: 'valueExpr',
@@ -1610,7 +1748,7 @@ valueExprFunctionsNullary
 	/ ('clock_timestamp'i { return ['clock_timestamp', 'date']; })
 	/ ('sysdate'i { return ['clock_timestamp', 'date']; })
 )
-'(' _ ')'
+_ '(' _ ')'
 	{
 		return {
 			type: 'valueExpr',
@@ -1722,7 +1860,7 @@ reference: https://dev.mysql.com/doc/refman/5.7/en/operator-precedence.html
 2: - (unary minus)
 3: *, /, %
 4: -, +
-5: = (comparison), >=, >, <=, <, <>, !=, IS, LIKE
+5: = (comparison), >=, >, <=, <, <>, !=, IS, LIKE, REGEXP, RLIKE
 6: CASE, WHEN, THEN, ELSE
 7: AND
 8: XOR
@@ -1780,6 +1918,7 @@ expr_precedence0
 / valueExprFunctionsNullary
 / valueExprFunctionsUnary
 / valueExprFunctionsBinary
+/ valueExprFunctionsTernary
 / valueExprFunctionsNary
 / valueExprColumn
 / '(' _ e:expr_precedence9 _ ')'
@@ -1811,7 +1950,7 @@ RESERVED_KEYWORD_RELALG
 / 'right'i
 / 'outer'i
 / 'full'i
-/ 'natual'i
+/ 'natural'i
 / 'semi'i
 / 'anti'i
 / 'desc'i

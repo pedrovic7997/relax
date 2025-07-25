@@ -183,6 +183,38 @@ export class Help extends React.Component<Props> {
 								<li>Thus, <code className="">S ∪ S</code> ≠ <code className="">S</code> in general.</li>
 							</ul>
 
+							<h4 id="tutorial-user-dum-dee">dum and dee</h4>
+
+							<p><a href="https://dn-uni.com/wp-content/uploads/2018/12/An-Introduction-to-Relational-Database-Theory.pdf">
+								Tutorial D</a> proposes two special relations, which have been given the pet names
+								TableDum and TableDee (abbreviated to just Dum and Dee, respectively). TableDum
+								denotes a relation of degree zero (no attributes) and cardinality zero (no tuples),
+								whereas TableDee represents a relation of degree zero and cardinality one (there is
+								one single tuple!).</p>
+
+							<p>A predicate represented by a relation of degree zero is <i>niladic</i> (has no
+								parameters). In other words, it must be a proposition, <i>p</i>. If TableDee
+								represents <i>p</i>, then <i>p</i> is true (identity relation under join operators);
+								otherwise TableDum represents <i>p</i> and <i>p</i> is false. People often ask,
+								<i>"What purpose can relations of degree zero possibly serve? They seem to be
+								of little or no value."</i> The answer is that they represent answers to queries
+								of the form <i>"Is it true that ...?"</i> or <i>"Are there any ...?</i> where the
+								answer is just yes or no.</p>
+
+							<p>Dum and Dee relations can be represented as follows:</p>
+
+							<code className="example block">
+							Dum = {`{}`}   -- inline relation with empty heading and no tuples<br/>
+							Dee = {`{()}`} -- inline relation with empty heading but one tuple of degree zero<br/>
+							</code>
+
+							<p>Given a relation R with <i>n</i> (<i>n</i> {'> 0'}) attributes and <i>t</i> (<i>t</i> {'> 0'}) tuples</p>
+
+							<code className="example block">
+							R x Dum -- returns a relation with the same schema of R but no tuples<br/>
+							R x Dee -- returns the very same relation R<br/>
+							</code>
+
 							<h3 id="tutorial-user-plain-text-notation">Alternative plain text notation</h3>
 
 							<p>Before we introduce how to use the operators this should be a quick introduction of a very handy feature
@@ -692,8 +724,10 @@ export class Help extends React.Component<Props> {
 										and the names of the attributes/columns are not affected by assignment:
 										<code className="block example">X = R
 				X join S</code>
-										The attributes of the relation R are only accessible with its original names (R.a, R.b, ..),
-										and are not affected by the assignment.
+										The attributes of the relation R are accessible with either its original names (R.a, R.b, ..)
+										or the variable name used in the assignment:
+										<code className="block example">X = R
+				pi X.a (X join S)</code>
 									</p>
 
 									<p>There is a known problem when the last assignment ends with a natural join and the query consists
@@ -1025,7 +1059,7 @@ export class Help extends React.Component<Props> {
 										</tr>
 										<tr>
 											<th>alternative syntax</th>
-											<td>pi</td>
+											<td>sigma</td>
 										</tr>
 										<tr>
 											<th>example</th>
@@ -2119,9 +2153,12 @@ export class Help extends React.Component<Props> {
 								</tr>
 
 								<tr>
-									<td><code>concat(a:string [, ...])</code></td>
+									<td><code>concat(a:"any" [, ...])</code></td>
 									<td>string</td>
-									<td>concatenates the given strings</td>
+									<td>returns the string that results from concatenating the arguments.
+										<br />May have one or more arguments. A non-string argument is implicitly converted to its equivalent string form and then concatenated. Returns null if any argument is null (like in <a
+								href="https://dev.mysql.com/doc/refman/8.0/en/string-functions.html#function_concat">MySQL</a>).
+									</td>
 								</tr>
 								<tr>
 									<td><code>upper(a:string)
@@ -2155,9 +2192,28 @@ export class Help extends React.Component<Props> {
 								</tr>
 
 								<tr>
-									<td><code>strlen(a:string)</code></td>
-									<td>number</td>
-									<td>number of characters of the string</td>
+									<td>
+										<code>substring(str:string, pos:number [, length:number])</code>
+										<code>substring(str:string FROM pos:number [FOR length:number])</code>
+									</td>
+									<td>string</td>
+									<td>returns the substring of the given string starting at the given position and having the given length.
+										<br />The first character in the string has index 1, and in case no length is specified, the substring extends to the end of the string.
+										<br />Zero start position is treated as 1. If <code>pos</code> is greater than the length of the string, an empty string is returned.
+										It is also possible to use a negative start position (like in <a
+								href="https://dev.mysql.com/doc/refman/8.4/en/string-functions.html#function_substring">MySQL</a>). In this case, the beginning of the substring is <code>pos</code> characters from the end of the string, rather than the beginning.
+										<br />If <code>length</code> is less than or equal to 0, an empty string is returned (same as in MySQL). If it is greater than the length of the string, the substring extends to the end of the string.
+									</td>
+								</tr>
+
+								<tr>
+									<td><code>cast(expr AS type)</code></td>
+									<td>type</td>
+									<td>specifies a run-time type conversion from one data type to another. The type can be any of the types supported 
+										(i.e., <i>string</i>, <i>number</i>, <i>date</i> or <i>boolean</i>). <br />
+									
+										If the value of <code>expr</code> is null, then the result of the cast expression is also null.
+									</td>
 								</tr>
 
 								<tr>
@@ -2183,6 +2239,46 @@ export class Help extends React.Component<Props> {
 										modulo of the given numbers
 									</td>
 								</tr>
+
+								<tr>
+									<td><code>sqrt(a:number)</code></td>
+									<td>number</td>
+									<td>
+										the square root of the given number. <br />
+										The return value will be null when the number is less than 0.
+									</td>
+								</tr>
+
+								<tr>
+									<td><code>exp(a:number)</code></td>
+									<td>number</td>
+									<td>compute <i>e</i> (the base of natural logarithms) raised to the power of <code>a</code></td>
+								</tr>
+
+								<tr>
+									<td><code>power(a:number, b:number)</code></td>
+									<td>number</td>
+									<td>compute <code>a</code> raised to the power <code>b</code></td>
+								</tr>
+
+								<tr>
+									<td><code>ln(a:number)</code></td>
+									<td>number</td>
+									<td>the natural logarithm of the given number. <br />
+										The return value will be null when the value of the number is less than or equal to 0.
+									</td>
+								</tr>
+
+								<tr>
+									<td><code>log(a:number, b:number)</code></td>
+									<td>number</td>
+									<td>
+										the logarithm, base <code>a</code>, of <code>b</code>. <br />
+										The base can be any positive value other than 0 or 1 and <code>b</code> can be any positive value. <br />
+										The return value will be null when the value of <code>b</code> is less than or equal to 0.
+									</td>
+								</tr>
+
 								<tr>
 									<td>
 										<code>round(a)

@@ -414,6 +414,40 @@ export class Landing extends React.Component {
 
 						<h2 id="changelog">Changelog</h2>
 						<ul>
+							<li>v0.33 – Released 17.04.2025
+								<ul>
+									<li>Added Tuple Relational Calculus (TRC) support | #232</li>
+									<li>Implemented substring, cast, and additional math functions | #241</li>
+								</ul>
+							</li>
+							<li>v0.32 – Released 15.04.2025
+								<ul>
+									<li>Fixed bug in tau/order operator | #240</li>
+									<li>Added relational algebra snippets with autocomplete | #231</li>
+								</ul>
+							</li>
+							<li>v0.31 – Released 09.04.2025
+								<ul>
+									<li>Fixed typo in reserved words | #224</li>
+									<li>Integrated enhanced Relax API support and bug fixes | #148</li>
+									<li>Fixed concat expression issues | #178</li>
+									<li>Added new datasets used in DB courses at Ufes, Brazil | #194</li>
+									<li>Implemented project “all columns” (π *) support in relational and multiset algebra | #203</li>
+									<li>Allowed using local table/variable names to reference columns in relational algebra | #205</li>
+									<li>Added support for TableDum and TableDee (Tutorial D) | #212</li>
+									<li>Included a devcontainer setup along with improved linters and formatters | #213</li>
+									<li>Consolidated improvements for Bags/Multiset Algebra | #215</li>
+									<li>Fixed issues with distorted execution trees in complex queries and improved JPG downloads | #216</li>
+									<li>Resolved a critical date check crash | #217</li>
+									<li>Added Italian translation | #225</li>
+								</ul>
+							</li>
+							<li>v0.30 – Released 05.03.2025
+								<ul>
+									<li>Added string functions (REGEXP/RLIKE, REPEAT, REPLACE, REVERSE) | #179</li>
+									<li>Updated dependencies</li>
+								</ul>
+							</li>
 							<li>0.28 - Released 01.09.2022
 								<ul>
 									<li>Added Dark Mode Support | #150</li>

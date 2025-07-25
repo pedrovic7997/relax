@@ -13,6 +13,7 @@ def CsvToJson():
 		"es": {},
 		"kr": {},
 		"pt": {},
+		"it": {}
 	}
 	with open('languages.csv', encoding="utf8") as csv_file:
 		csv_reader = csv.reader(csv_file, delimiter=delimiter)

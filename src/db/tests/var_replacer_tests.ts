@@ -226,6 +226,7 @@ QUnit.test('test variables (unreplaced)', function (assert) {
 				type: 'assignment',
 				name: 'A',
 				child: {
+					assignmentName: 'A',
 					type: 'relation',
 					name: 'firstRelation',
 					codeInfo: mockCodeInfo(),
@@ -236,6 +237,7 @@ QUnit.test('test variables (unreplaced)', function (assert) {
 				type: 'assignment',
 				name: 'B',
 				child: {
+					assignmentName: 'B',
 					type: 'relation',
 					name: 'secondRelation',
 					codeInfo: mockCodeInfo(),
@@ -304,6 +306,7 @@ QUnit.test('test variables (replaced)', function (assert) {
 			child: {
 				type: 'union',
 				child: {
+					assignmentName: 'A',
 					metaData: {
 						fromVariable: 'A',
 					},
@@ -312,6 +315,7 @@ QUnit.test('test variables (replaced)', function (assert) {
 					name: 'firstRelation',
 				},
 				child2: {
+					assignmentName: 'B',
 					metaData: {
 						fromVariable: 'B',
 					},
@@ -363,6 +367,7 @@ QUnit.test('test variables (replaced)', function (assert) {
 				type: 'assignment',
 				name: 'A',
 				child: {
+					assignmentName: 'A',
 					metaData: {
 						fromVariable: 'A',
 					},
@@ -376,6 +381,7 @@ QUnit.test('test variables (replaced)', function (assert) {
 				type: 'assignment',
 				name: 'B',
 				child: {
+					assignmentName: 'B',
 					metaData: {
 						fromVariable: 'B',
 					},
@@ -415,6 +421,7 @@ QUnit.test('test variables without cycle', function (assert) {
 			child: {
 				type: 'union',
 				child: {
+					assignmentName: 'A',
 					metaData: {
 						fromVariable: 'C',
 					},
@@ -423,6 +430,7 @@ QUnit.test('test variables without cycle', function (assert) {
 					codeInfo: mockCodeInfo(),
 				},
 				child2: {
+					assignmentName: 'B',
 					metaData: {
 						fromVariable: 'B',
 					},
@@ -440,6 +448,7 @@ QUnit.test('test variables without cycle', function (assert) {
 				type: 'assignment',
 				name: 'A',
 				child: {
+					assignmentName: 'A',
 					metaData: {
 						fromVariable: 'A',
 					},
@@ -453,6 +462,7 @@ QUnit.test('test variables without cycle', function (assert) {
 				type: 'assignment',
 				name: 'B',
 				child: {
+					assignmentName: 'B',
 					metaData: {
 						fromVariable: 'B',
 					},
@@ -466,6 +476,7 @@ QUnit.test('test variables without cycle', function (assert) {
 				type: 'assignment',
 				name: 'C',
 				child: {
+					assignmentName: 'A',
 					metaData: {
 						fromVariable: 'A',
 					},

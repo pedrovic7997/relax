@@ -174,6 +174,7 @@ example,  42
 									<DropdownItem onClick={() => this.changeLocale('de')}>de</DropdownItem>
 									<DropdownItem onClick={() => this.changeLocale('es')}>es</DropdownItem>
 									<DropdownItem onClick={() => this.changeLocale('kr')}>kr</DropdownItem>
+									<DropdownItem onClick={() => this.changeLocale('it')}>it</DropdownItem>
 								</DropdownMenu>
 							</UncontrolledDropdown>
 							<NavItem>

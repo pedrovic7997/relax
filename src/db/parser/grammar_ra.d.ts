@@ -42,7 +42,9 @@ declare module relalgAst {
 	type assignment = {
 		type: 'assignment',
 		name: string,
-		child: relalgOperation,
+		child: {
+			assignmentName?: string,
+		} & relalgOperation
 		child2?: undefined,
 		assignments?: undefined,
 
@@ -52,6 +54,7 @@ declare module relalgAst {
 	type relalgOperation
 		= relation
 		| table
+		| eliminateDuplicates
 		| projection
 		| selection
 		| renameColumns
@@ -77,6 +80,12 @@ declare module relalgAst {
 		type: 'columnName',
 		name: string | number,
 		relAlias: string | null,
+	}
+
+	interface columnAsterisk {
+		type: 'column',
+		name: '*',
+		relAlias: string | null
 	}
 
 	interface namedColumnExpr {
@@ -139,7 +148,18 @@ declare module relalgAst {
 		child: relalgOperation,
 		child2?: undefined,
 		assignments?: undefined,
-		arg: (namedColumnExpr | columnName)[],
+		arg: (namedColumnExpr | columnName | columnAsterisk)[],
+
+		wrappedInParentheses?: boolean,
+		metaData?: { [key: string]: any },
+		codeInfo: CodeInfo,
+	}
+
+	interface eliminateDuplicates {
+		type: 'eliminateDuplicates',
+		child: relalgOperation,
+		child2?: undefined,
+		assignments?: undefined,
 
 		wrappedInParentheses?: boolean,
 		metaData?: { [key: string]: any },
@@ -218,8 +238,12 @@ declare module relalgAst {
 	}
 
 	interface binaryRelalgOperation {
-		child: relalgOperation,
-		child2: relalgOperation,
+		child: {
+			assignmentName?: string,
+		} & relalgOperation,
+		child2: {
+			assignmentName?: string,
+		} & relalgOperation,
 		assignments?: undefined,
 
 		wrappedInParentheses?: boolean,
@@ -327,6 +351,7 @@ declare module relalgAst {
 		assignments: assignment[],
 		codeInfo: CodeInfo,
 		exampleSql?: string,
+		exampleBags?: string,
 		exampleRA?: string;
 	}
 
@@ -350,7 +375,6 @@ declare module relalgAst {
 		| 'minus'
 		| 'not'
 		| 'coalesce'
-		| 'concat'
 		| 'adddate'
 		| 'subdate'
 		| 'upper'
@@ -363,6 +387,11 @@ declare module relalgAst {
 		| 'floor'
 		| 'ceil'
 		| 'round'
+		| 'sqrt'
+		| 'power'
+		| 'exp'
+		| 'ln'
+		| 'log'
 		| 'date'
 		| 'year'
 		| 'month'
@@ -385,5 +414,12 @@ declare module relalgAst {
 		| '<='
 		| '>'
 		| '<'
+		| "regexp"
+		| "rlike"
+		| "replace"
+		| "repeat"
+		| "reverse"
+		| "substring"
+		| "cast"
 	);
 }

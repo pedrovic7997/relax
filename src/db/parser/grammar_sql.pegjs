@@ -1357,8 +1357,78 @@ _ '(' _ arg0:valueExpr _ argn:(',' _ valueExpr _ )* ')'
 		};
 	}
 
-valueExprFunctionsBinary
+substringTernaryCommaStyle
 = func:(
+	('substring'i { return ['substring', 'string']; })
+)
+_ '(' _ arg0:valueExpr _ ',' _ arg1:valueExpr _ ',' _ arg2:valueExpr _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, arg1, arg2],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
+substringTernaryFromForStyle
+= func:(
+	('substring'i { return ['substring', 'string']; })
+)
+_ '(' _ arg0:valueExpr _ 'from'i _ arg1:valueExpr _ 'for'i _ arg2:valueExpr _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, arg1, arg2],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
+substringBinaryCommaStyle
+= func: (
+	('substring'i { return ['substring', 'string']; })
+)
+_ '(' _ arg0:valueExpr _ ',' _ arg1:valueExpr _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, arg1],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
+substringBinaryFromForStyle
+= func: (
+	('substring'i { return ['substring', 'string']; })
+)
+_ '(' _ arg0:valueExpr _ 'from'i _ arg1:valueExpr _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, arg1],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+
+valueExprFunctionsTernary
+= substringTernaryCommaStyle
+/ substringTernaryFromForStyle
+
+valueExprFunctionsBinary
+= substringBinaryCommaStyle
+  / substringBinaryFromForStyle
+  / func:(
 	('adddate'i { return ['adddate', 'date']; })
 	/ ('subdate'i { return ['subdate', 'date']; })
 	/ ('mod'i { return ['mod', 'number']; })
@@ -1366,6 +1436,8 @@ valueExprFunctionsBinary
 	/ ('sub'i { return ['sub', 'number']; })
 	/ ('mul'i { return ['mul', 'number']; })
 	/ ('div'i { return ['div', 'number']; })
+	/ ('power'i { return ['power', 'number']; })
+	/ ('log'i { return ['log', 'number']; })
 	/ ('repeat'i { return ['repeat', 'string']; })
 )
 _ '(' _ arg0:valueExpr _ ',' _ arg1:valueExpr _ ')'
@@ -1375,6 +1447,25 @@ _ '(' _ arg0:valueExpr _ ',' _ arg1:valueExpr _ ')'
 			datatype: func[1],
 			func: func[0],
 			args: [arg0, arg1],
+
+			codeInfo: getCodeInfo()
+		};
+	}
+/ func:(
+	('cast'i { return ['cast', 'null']; })
+)
+_ '(' _ arg0:valueExpr _ 'as'i _ arg1:('string'i / 'number'i / 'date'i / 'boolean'i) _ ')'
+	{
+		return {
+			type: 'valueExpr',
+			datatype: func[1],
+			func: func[0],
+			args: [arg0, {
+				datatype: 'string',
+				func: 'constant',
+				args: [arg1],
+				codeInfo: getCodeInfo()
+			}],
 
 			codeInfo: getCodeInfo()
 		};
@@ -1392,9 +1483,11 @@ valueExprFunctionsUnary
 	/ ('floor'i { return ['floor', 'number']; })
 	/ ('ceil'i { return ['ceil', 'number']; })
 	/ ('round'i { return ['round', 'number']; })
+	/ ('sqrt'i { return ['sqrt', 'number']; })
+	/ ('exp'i { return ['exp', 'number']; })
+	/ ('ln'i { return ['ln', 'number']; })
 
 	/ ('date'i { return ['date', 'date']; })
-
 	/ ('year'i { return ['year', 'number']; })
 	/ ('month'i { return ['month', 'number']; })
 	/ ('day'i { return ['dayofmonth', 'number']; })
@@ -1602,6 +1695,7 @@ expr_precedence0
 / valueExprFunctionsNullary
 / valueExprFunctionsUnary
 / valueExprFunctionsBinary
+/ valueExprFunctionsTernary
 / valueExprFunctionsNary
 / valueExprColumn
 / '(' _ e:expr_precedence9 _ ')'
@@ -1632,7 +1726,7 @@ RESERVED_KEYWORD_RELALG
 / 'right'i
 / 'outer'i
 / 'full'i
-/ 'natual'i
+/ 'natural'i
 / 'semi'i
 / 'anti'i
 / 'desc'i
