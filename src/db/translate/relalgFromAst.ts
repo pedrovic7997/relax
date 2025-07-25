@@ -52,8 +52,6 @@ function parseJoinCondition(condition: relalgAst.booleanExpr | string[] | null):
 	}
 }
 
-type temporaryRelationPredicate = trcAst.RelationPredicate & drcAst.RelationPredicate;
-
 interface quantifiedExpressionsWithScope {root: drcAst.QuantifiedExpression; scope: number};
 
 interface RelationPredicateWithLogicalExpression { relationPredicate: drcAst.RelationPredicate, logicalExpression: string | null, hasEquivalent: boolean };
@@ -222,7 +220,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		const relationPredicates = getAllRelationPredicatesPerScope(root);
 		const domainVariables = root.variables;
 
-		const relationWithUndeclaredVariable = relationPredicates.find((relation: temporaryRelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
+		const relationWithUndeclaredVariable = relationPredicates.find((relation: drcAst.RelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
 			
 		if (relationWithUndeclaredVariable) {
 			warnings.push({msg: `Undeclared variables <${relationWithUndeclaredVariable.variables.join(",")}> in ${relationWithUndeclaredVariable.relation}.`, codeInfo: relationWithUndeclaredVariable.codeInfo});
@@ -234,7 +232,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			const relationPredicates = getAllRelationPredicatesPerScope(quantifiedExpression?.root.formula);
 			const domainVariables = quantifiedExpression?.root.variables;
 
-			const relationWithUndeclaredVariable = relationPredicates.find((relation: temporaryRelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
+			const relationWithUndeclaredVariable = relationPredicates.find((relation: drcAst.RelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
 			
 			if (relationWithUndeclaredVariable) {
 				warnings.push({msg: `Undeclared variables <${relationWithUndeclaredVariable.variables.join(",")}> in ${relationWithUndeclaredVariable.relation}.`, codeInfo: relationWithUndeclaredVariable.codeInfo});
@@ -242,8 +240,8 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		}
 	}
 
-	function getAllRelationPredicatesPerScope(root: any): temporaryRelationPredicate[] {
-		const relationPredicates: temporaryRelationPredicate[] = [];
+	function getAllRelationPredicatesPerScope(root: any): drcAst.RelationPredicate[] {
+		const relationPredicates: drcAst.RelationPredicate[] = [];
 
 		function getAllRelationPredicatesRec(root: any): void {
 			switch (root.type) {
@@ -356,8 +354,8 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		return relationPredicates;
 	}
 
-	function getRelationPredicate(root: any, domainVar: string, ignoreNegation: boolean = false): temporaryRelationPredicate[] {
-		const relationPredicates: temporaryRelationPredicate[] = [];
+	function getRelationPredicate(root: any, domainVar: string, ignoreNegation: boolean = false): drcAst.RelationPredicate[] {
+		const relationPredicates: drcAst.RelationPredicate[] = [];
 
 		function getRelationPredicateRec(root: any, domainVar: string, scopeChanges = 0): void {
 			// NOTE: this represents that the scope has changed, so it doesn't make sense to keep searching
@@ -423,7 +421,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		var relationPredicateObject = currentCluster.shift();
 		var raNode = handleRenameColumns(
 						relations[relationPredicateObject?.relationPredicate.relation!].copy(),
-						relationPredicateObject!.relationPredicate as temporaryRelationPredicate
+						relationPredicateObject!.relationPredicate as drcAst.RelationPredicate
 					);
 
 		var equivalentsRelPredObjects = currentCluster
@@ -438,7 +436,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 			var equivalentRaNode = handleRenameColumns(
 				relations[e.relationPredicate.relation!].copy(),
-				e.relationPredicate as temporaryRelationPredicate
+				e.relationPredicate as drcAst.RelationPredicate
 			);
 
 			switch (e.logicalExpression) {
@@ -461,7 +459,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			
 			var equivalentRaNode = handleRenameColumns(
 				relations[e.relationPredicate.relation!].copy(),
-				e.relationPredicate as temporaryRelationPredicate
+				e.relationPredicate as drcAst.RelationPredicate
 			);
 
 			switch (e.logicalExpression) {
@@ -492,7 +490,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			for (let e of equivalentsRelPredObjects) {
 				var equivalentRaNode = handleRenameColumns(
 					relations[e.relationPredicate.relation!].copy(),
-					e.relationPredicate as temporaryRelationPredicate
+					e.relationPredicate as drcAst.RelationPredicate
 				);
 
 				switch (e.logicalExpression) {
@@ -515,7 +513,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	}
 
 	function handleDomainVariables(nRaw: any): RANode {
-		const relationPredicates: temporaryRelationPredicate[] = nRaw.variables.flatMap((v: string) => {
+		const relationPredicates: drcAst.RelationPredicate[] = nRaw.variables.flatMap((v: string) => {
 			var relationPredicates = [...getRelationPredicate(nRaw, v)]
 
 			if (relationPredicates.length === 0) {
@@ -538,7 +536,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			return getResultingSet(currentCluster);
 		}
 
-		const columnsRenamed = uniqueRelationPredicates.map((rp: temporaryRelationPredicate) => {
+		const columnsRenamed = uniqueRelationPredicates.map((rp: drcAst.RelationPredicate) => {
 			var equivalentRelation = relations[rp.relation].copy();
 			if (equivalentRelation === undefined)
 				throw new Error('It was not possible to find the relation match for: ' + rp.relation);
@@ -550,7 +548,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		})
 	}
 
-	function handleRenameColumns(r: Relation, equivalentRelPredicate: temporaryRelationPredicate): RANode {
+	function handleRenameColumns(r: Relation, equivalentRelPredicate: drcAst.RelationPredicate): RANode {
 		var renamingColumns = new RenameColumns(r);
 
 		var relColumns = r.getSchema().getColumns();
@@ -795,7 +793,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 				let currentRelationPredicate = {
 					variables: (nRaw.variables as string[]),
 					relation: (nRaw.relation as string)
-				} as temporaryRelationPredicate;
+				} as drcAst.RelationPredicate;
 				const renamedColumns = handleRenameColumns(relations[nRaw.relation].copy(), currentRelationPredicate);
 
 				return new SemiJoin(baseRel, renamedColumns, true)
