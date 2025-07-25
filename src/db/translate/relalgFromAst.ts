@@ -126,7 +126,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 						for (let l=0; l < nextRelationLength; l++) {
 							const currentVariable = nextRelation.variables[l];
 							if (variable === currentVariable && (l != j || mainRelationLenght != nextRelationLength)) {
-								throw new ExecutionError('Condition of partially correlated variables between Relational Predicates not supported.');
+								throw new ExecutionError(i18n.t('db.messages.translate.error-drc-partially-correlated-variables-not-supported'));
 							}
 						}
 					}
@@ -147,7 +147,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		quantifiedExpressions.forEach( q => {
 			const outerRoot = getOuterRootFromScope(root, q.root, q.scope);
 			const repeatedVariable = (outerRoot.variables as string[]).find(variable => q.root.variables.includes(variable));
-			if (repeatedVariable) throw new ExecutionError(`Same variable name "${repeatedVariable}" from ${q.root.quantifier} quantifier reused from <${outerRoot.variables.join(",")}>.`);
+			if (repeatedVariable) throw new ExecutionError(i18n.t('db.messages.translate.error-drc-quantifier-variable-reused'));
 		})
 	}
 
@@ -208,7 +208,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			});
 
 			if (negatedRelPredCount === relPredCount && clustersSet.length > 0) {
-				throw new ExecutionError("Negated Relation Predicate left unmatched for set operation (unsafe formula).");
+				throw new ExecutionError(i18n.t('db.messages.translate.error-drc-negated-relation-predicate-unmatched'));
 			}
 		});
 	}
@@ -223,7 +223,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		const relationWithUndeclaredVariable = relationPredicates.find((relation: drcAst.RelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
 			
 		if (relationWithUndeclaredVariable) {
-			warnings.push({msg: `Undeclared variables <${relationWithUndeclaredVariable.variables.join(",")}> in ${relationWithUndeclaredVariable.relation}.`, codeInfo: relationWithUndeclaredVariable.codeInfo});
+			warnings.push({msg: i18n.t('db.messages.translate.error-drc-undeclared-variables', { variables: relationWithUndeclaredVariable.variables.join(",") , relation: relationWithUndeclaredVariable.relation }), codeInfo: relationWithUndeclaredVariable.codeInfo});
 		}
 
 		while (quantifiedExpressions.length > 0) {
@@ -235,7 +235,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			const relationWithUndeclaredVariable = relationPredicates.find((relation: drcAst.RelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
 			
 			if (relationWithUndeclaredVariable) {
-				warnings.push({msg: `Undeclared variables <${relationWithUndeclaredVariable.variables.join(",")}> in ${relationWithUndeclaredVariable.relation}.`, codeInfo: relationWithUndeclaredVariable.codeInfo});
+				warnings.push({msg: i18n.t('db.messages.translate.error-drc-undeclared-variables', { variables: relationWithUndeclaredVariable.variables.join(",") , relation: relationWithUndeclaredVariable.relation }), codeInfo: relationWithUndeclaredVariable.codeInfo});
 			}
 		}
 	}
@@ -517,7 +517,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			var relationPredicates = [...getRelationPredicate(nRaw, v)]
 
 			if (relationPredicates.length === 0) {
-				throw new Error('Relation predicate must be defined!')
+				throw new ExecutionError(i18n.t('db.messages.translate.error-drc-relation-predicate-must-be-defined'))
 			}
 
 			return relationPredicates
@@ -539,7 +539,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		const columnsRenamed = uniqueRelationPredicates.map((rp: drcAst.RelationPredicate) => {
 			var equivalentRelation = relations[rp.relation].copy();
 			if (equivalentRelation === undefined)
-				throw new Error('It was not possible to find the relation match for: ' + rp.relation);
+				throw new ExecutionError(i18n.t('db.messages.translate.error-drc-relation-match-not-found', { relation: rp.relation }));
 			return handleRenameColumns(equivalentRelation, rp);
 		});
 
@@ -554,7 +554,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		var relColumns = r.getSchema().getColumns();
 
 		if (relColumns.length !== equivalentRelPredicate.variables.length)
-			throw new Error('Number of domain variables in relation predicate does not match the number of columns in relation');
+			throw new ExecutionError(i18n.t('db.messages.translate.error-drc-domain-variable-count-mismatch'));
 
 		relColumns.forEach((col, index) => {
 			var oldColumnName = col.getName();
@@ -568,7 +568,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 	function getColumnData(nRaw: any, variable: string): Column {
 		const predicates = getRelationPredicate(nRaw, variable, filteredClustersSet[0].length !== 0);
 		if (predicates.length === 0) {
-			throw new Error('Domain variable must be declared in some non-negated Relation predicate!')
+			throw new ExecutionError(i18n.t('db.messages.translate.error-drc-domain-variable-must-be-declared'))
 		}
 
 		const rel = relations[predicates[0].relation].copy() as Relation
@@ -615,12 +615,12 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 				switch (nRaw.quantifier) {
 					case 'exists': {
 						if (!baseRel) {
-							throw new Error('Base relation is null!')
+							throw new ExecutionError(i18n.t('db.messages.translate.error-drc-base-relation-null'))
 						}
 
 						const relationPredicates = (nRaw.variables as string[]).flatMap(variable => [...getRelationPredicate(nRaw, variable)]);
 						if (!relationPredicates || relationPredicates.length === 0) {
-							throw new Error('Relation predicate must be defined!');
+							throw new ExecutionError(i18n.t('db.messages.translate.error-drc-relation-predicate-must-be-defined'));
 						}
 
 						scope++;
@@ -783,7 +783,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 			case 'RelationPredicate': {
 				if (!baseRel) {
-					throw new Error('Base relation is null!')
+					throw new ExecutionError(i18n.t('db.messages.translate.error-drc-base-relation-null'))
 				}
 
 				if (negated) {
@@ -801,14 +801,14 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 			case 'Negation': {
 				if (nRaw.formula.type === 'RelationPredicate' && filteredClustersSet.every(c => c.every(rp => rp.relationPredicate !== nRaw.formula))) {
-					throw new Error('Cannot negate RelationPredicate (unsafe formula)')
+					throw new ExecutionError(i18n.t('db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe'));
 				}
 				return rec(nRaw.formula, baseRel, !negated)
 			}
 
 			case 'Predicate': {
 				if (!baseRel) {
-					throw new Error('Base relation is null!')
+					throw new ExecutionError(i18n.t('db.messages.translate.error-drc-base-relation-null'))
 				}
 
 				if (negated) {
