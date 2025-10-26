@@ -603,7 +603,11 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 				})
 
 				const base = handleDomainVariables(nRaw)
-				const res = rec(nRaw.formula, base)
+
+				const res = nRaw.formula.type === 'RelationPredicate' 
+					? base
+					: rec(nRaw.formula, base)
+
 				if (warnings.length > 0) {
 					warnings.forEach(w => res.addWarning(w.msg, w.codeInfo));
 				}
