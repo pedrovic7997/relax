@@ -2831,191 +2831,299 @@ export class Help extends React.Component<Props> {
 									href="#relalg-valueexpr">value expression</a></p>
 
 
-							<h2 id="trc-reference">Reference - TRC</h2>
+							<h2 id="rc-reference">Reference - RC</h2>
 
-							<p>In contrast to Relational Algebra, which is procedural, Tuple Relational Calculus (TRC) is a declarative
+							<p>In contrast to Relational Algebra, which is procedural, Relational Calculus (RC) is a declarative
 								language, meaning that it tells what to retrieve instead of the steps on how to do it. In this context,
-								a TRC expression is an unified logical formula that states the conditions for the data to be 
-								retrieved. The goal of the TRC extension is to make possible learning TRC and visualize how
+								a RC expression is an unified logical formula that states the conditions for the data to be
+								retrieved. The goal of the RC extension is to make possible learning RC and visualize how
 								it relates to relational algebra.</p>
 
-							<h3 id="trc-syntax">General syntax</h3>
+							<p>The extension's goal is achieved through two ways, Tuple Relational Calculus (TRC) and Domain Relational Calculus (DRC), each with its own syntax and semantics although similar. Each topic below will describe examples in both ways.</p>
+
+							<h3 id="rc-syntax">General syntax</h3>
 							<div>
-								<h4 id="trc-expression">TRC expression</h4>
-								<p>A TRC expression has the general form: </p>
-								<code className="example trc" >&#123; t1, ..., tn | formula(t1, ..., tn) &#125;</code>
-								<p>First you define the tuple variables that will be used, then you write a formula involving those variables.</p>
+								<p>Relation Calculus is written in way that first contains what you want to show in the result (unbound variables), followed by a pipe character then by a formula. Depending on the type of expression (Tuple or Domain Variable), the syntax may vary, as shown below.</p>
+
+								<ul>
+									<li>
+										{/* <a href="#trc-expression">TRC expression</a> */}
+										<p>A TRC expression has the general form: </p>
+										<code className="example trc" >&#123; t1, ..., tn | formula(t1, ..., tn) &#125;</code>
+										<p>First you define the tuple variables that will be used, then you write a formula involving those variables.</p>
+									</li>
+									<li>
+										{/* <a href="#drc-expression">DRC expression</a> */}
+										<p>A DRC expression has the general form: </p>
+										<code className="example drc" >&#123; &#60; d1, ..., dn &#62; | formula(d1, ..., dn) &#125;</code>
+										<p>First you define a tuple containing all the domain variables (enclosed with angled brackets) that will be used and exposed in the resulting projection, then you write a formula involving those variables.</p>
+									</li>
+								</ul>								
 							</div>
 
 							<div>
-								<h4 id="trc-relation-predicate">Relation Predicate</h4>
+								<h4 id="rc-relation-predicate">Relation Predicate</h4>
 								<p>
 									For every new variable that you introduce, it's necessary to define its boundaries.
 									Meaning you have to define which relation that variable belongs to. There are 3 ways to do so in this TRC implementation:
 								</p>
-								<div className="scroll-x">
-									<table className="table table-nonfluid">
-										<tbody>
-											<tr>
-											<th>first syntax</th>
-												<td>Relation(variable)</td>
-											</tr>
-											<tr>
-												<th>second syntax</th>
-											<td>variable in Relation</td>
-											</tr>
-											<tr>
-												<th>third syntax</th>
-											<td>variable ∈ Relation</td>
-											</tr>
-											<tr>
-											<th>example</th>
-												<td>
-													<code className="trc">&#123; t | R(t) &#125;</code>
-													<br />
-													<code className="trc">&#123; t | t in R &#125;</code>
-													<br />
-													<code className="trc">&#123; t | t ∈ R &#125;</code>
-												</td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
+								<ul>
+									<li>
+										<p style={{ marginBottom: '5px' }}>In TRC syntax</p>
+										<div className="scroll-x">
+											<table className="table table-nonfluid">
+												<tbody>
+													<tr>
+													<th>first syntax</th>
+														<td>Relation(variable)</td>
+													</tr>
+													<tr>
+														<th>second syntax</th>
+													<td>variable in Relation</td>
+													</tr>
+													<tr>
+														<th>third syntax</th>
+													<td>variable ∈ Relation</td>
+													</tr>
+													<tr>
+													<th>example</th>
+														<td>
+															<code className="trc">&#123; t | R(t) &#125;</code>
+															<br />
+															<code className="trc">&#123; t | t in R &#125;</code>
+															<br />
+															<code className="trc">&#123; t | t ∈ R &#125;</code>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</li>
+									<li>
+										<p style={{ marginBottom: '5px' }}>In DRC syntax</p>
+										<div className="scroll-x">
+											<table className="table table-nonfluid">
+												<tbody>
+													<tr>
+														<th>first syntax</th>
+														<td>variable in Relation</td>
+													</tr>
+													<tr>
+														<th>second syntax</th>
+														<td>variable ∈ Relation</td>
+													</tr>
+													<tr>
+													<th>example</th>
+														<td>
+															<code className="trc">&#123; &#60;x,y&#62; | &#60;x,y&#62; in R &#125;</code>
+															<br />
+															<code className="trc">&#123; &#60;x,y&#62; | &#60;x,y&#62; ∈ R &#125;</code>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</li>
+								</ul>
 							</div>
 
+							<h4 id="rc-projection">Projection</h4>
 							<div>
-								<h4 id="trc-projection">Projection</h4>
-								<p>If you want to project only some of the fields fields from a tuple variable, the . operator can be used, as follows:</p>
-								<code className="example trc">&#123; t.a, ..., t.n | t ∈ R &#125;</code>
-								<p>In this case, the columns t.a, ..., t.n will be projected and will appear on the final result set.</p>
+								<ul>
+									<li>
+										<p> TRC </p>
+										<p>In TRC, if you want to project only some of the fields fields from a tuple variable, the . operator can be used, as follows:</p>
+										<code className="example trc">&#123; t.a, ..., t.n | t ∈ R &#125;</code>
+										<p>In this case, the columns t.a, ..., t.n will be projected and will appear on the final result set.</p>
+									</li>
+									<li>
+										<p> DRC </p>
+										<p>
+											In DRC, if you want to project only some of the domain variables from a relation, 
+											you can include them in the set defined before the pipe character (free variables) 
+											but you must declare all of the domain variables in a Relation Predicate, one for each property of the relation, as follows:
+										</p>
+										<code className="example drc">&#123; &#60;a, b&#62; | &#60;a, b, ... , n&#62; ∈ R &#125;</code>
+										<p>In this case, from all variables <b>a</b> to <b>n</b> in relation <b>R</b>, only <b>a</b> and <b>b</b> will be projected and will appear on the final result set. </p>
+									</li>
+								</ul>
 							</div>
 
+							<h4 id="rc-renaming">Renaming</h4>
 							<div>
-								<h4 id="trc-renaming">Renaming</h4>
+								<h5>TRC</h5>
 								<p>It's also possible to rename the columns after projecting, the syntax adopted here is exactly the same as the RA one:</p>
 								<code className="example trc">&#123; t.a&#8594;x | t ∈ R &#125;</code>
 								<p>In this case, the column <b>a</b> will be renamed to <b>x</b>.</p>
+
+								<h5>DRC</h5>
+								<p>This operation only works in TRC, not implemented in DRC.</p>
+								<p>But, alternatively, when declaring the domain variables in a Relation Predicate, you can name it however you want.</p>
+								<p>For example, R being a relation with the schema:</p>
+								<code className="example drc">R(a, b, c)</code>
+								<p>The rename operation can be achieved in DRC by declaring the relation as the following:</p>
+								<code className="example drc">&#123; &#60;x, y&#62; | &#60;x, y, z&#62; ∈ R &#125;</code>
+								<p>In this case, the column <b>a</b> is being renamed to <b>x</b> column <b>b</b> to <b>y</b> and <b>c</b> to <b>z</b>.</p>
 							</div>
 
-							<h3 id="trc-operations">Logical operations</h3>
+							<h3 id="rc-operations">Logical operations</h3>
 							<p>
-								Logical operations are the building blocks of TRC expressions, they specifiy under which 
-								conditions a tuple will be included in the result set.
+								Logical operations are the building blocks of RC expressions, they specifiy under which 
+								conditions a tuple or set of domain variables will be included in the result set.
 							</p>
 							<p>The logical operations supported by this implementation are:</p>
 
+							<h4 id="rc-and">and</h4>
 							<div>
-								<h4 id="trc-and">and</h4>
 								<p>
-									The logical and operator (<strong>∧</strong>) ensures a tuple will appear on the resulting relation 
+									The logical and operator (<strong>∧</strong>) ensures a register will appear on the resulting relation 
 									if both conditions hold true.
 								</p>
-								<code className="example trc" >&#123; t | R(t) ∧ t.a &gt; 3 ∧ t.a &lt; 6 &#125;</code>
+								<ul>
+									<li>In TRC, the syntax is as follows:</li>
+									<code className="example trc" >&#123; t | R(t) ∧ t.a &gt; 3 ∧ t.a &lt; 6 &#125;</code>
+									<li>In DRC, the syntax is as follows:</li>
+									<code className="example drc" >&#123; &#60;a, b, c&#62; | &#60;a, b, c&#62; in R ∧ a &gt; 3 ∧ a &lt; 6  &#125;</code>
+								</ul>								
 								<p>
-									In this example, only the tuples where column <strong>a</strong> is greater than 3 but less than 6.
+									In this example, only the registers where column <strong>a</strong> is greater than 3 but less than 6.
 								</p>
 							</div>
 
+							<h4 id="rc-or">or</h4>
 							<div>
-								<h4 id="trc-or">or</h4>
 								<p>
-									The logical or operator (<strong>∨</strong>) ensures a tuple will appear on the resulting relation 
+									The logical or operator (<strong>∨</strong>) ensures a register will appear on the resulting relation 
 									if any of the conditions hold true.
 								</p>
-								<code className="example trc" >&#123; t | R(t) ∧ (t.a &gt; 3 &or; t.a = 1) &#125;</code>
+								<ul>
+									<li>In TRC, the syntax is as follows:</li>
+									<code className="example trc" >&#123; t | R(t) ∧ (t.a &gt; 3 &or; t.a = 1) &#125;</code>
+									<li>In DRC, the syntax is as follows:</li>
+									<code className="example drc" >&#123; &#60;a, b, c&#62; | &#60;a, b, c&#62; in R ∧ (a &gt; 3 &or; a = 1) &#125;</code>
+								</ul>
 								<p>
-									In this example, tuples where the column <strong>a</strong> is greater than 3 or exactly equal to 1 will
+									In this example, registers where the column <strong>a</strong> is greater than 3 or exactly equal to 1 will
 									appear in the result.
 								</p>
 							</div>
 
+							<h4 id="rc-xor">xor</h4>
 							<div>
-								<h4 id="trc-xor">xor</h4>
 								<p>
-									The logical xor operator (<strong>⊻</strong>) ensures a tuple will appear on the resulting relation
+									The logical xor operator (<strong>⊻</strong>) ensures a register will appear on the resulting relation
 									if one, and only one of the conditions holds true at a time.
 								</p>
-								<code className="example trc" >&#123; t | R(t) ∧ (t.a &lt; 3 ⊻ t.a &lt; 5) &#125;</code>
+								<ul>
+									<li>In TRC, the syntax is as follows:</li>
+									<code className="example trc" >&#123; t | R(t) ∧ (t.a &lt; 3 ⊻ t.a &lt; 5) &#125;</code>
+									<li>In DRC, the syntax is as follows:</li>
+									<code className="example drc" >&#123; &#60;a, b, c&#62; | &#60;a, b, c&#62; in R ∧ (a &lt; 3 ⊻ a &lt; 5) &#125;</code>
+								</ul>
 								<p>
-									In this example, tuples where the column <strong>a</strong> is less than 5 but not less than 3
+									In this example, registers where the column <strong>a</strong> is less than 5 but not less than 3
 									will show up.
 								</p>
 							</div>
 
+							<h4 id="rc-not">not</h4>
 							<div>
-								<h4 id="trc-not">not</h4>
 								<p>
 									The logical not operator (<strong>¬</strong>) is used to negate an expression, meaning the
-									tuples that will appear on the result are the ones that resolve the expression to false.
+									registers that will appear on the result are the ones that resolve the expression to false.
 								</p>
-								<code className="example trc" >&#123; t | R(t) ∧ ¬(t.a &lt; 3) &#125;</code>
+								<ul>
+									<li>In TRC, the syntax is as follows:</li>
+									<code className="example trc" >&#123; t | R(t) ∧ ¬(t.a &lt; 3) &#125;</code>
+									<li>In DRC, the syntax is as follows:</li>
+									<code className="example drc" >&#123; &#60;a, b, c&#62; | &#60;a, b, c&#62; in R ∧ ¬(a &lt; 3) &#125;</code>
+								</ul>
 								<p>
-									In this example, tuples where the column <strong>a</strong> is not less than 3 will
+									In this example, registers where the column <strong>a</strong> is not less than 3 will
 									appear in resulting relation.
 								</p>
 							</div>
 
+							<h4 id="rc-implication">implication</h4>
 							<div>
-								<h4 id="trc-implication">implication</h4>
 								<p>
 									The logical implication operator (<strong>⇒</strong>) ensures that, given that a certain condition
 									is true, the implied condition should also be true.
 								</p>
-								<code className="example trc" >&#123; t | R(t) ∧ t.a &lt; 7 ⇒ t.b = 'a' &#125;</code>
+								<ul>
+									<li>In TRC, the syntax is as follows:</li>
+									<code className="example trc" >&#123; t | R(t) ∧ t.a &lt; 7 ⇒ t.b = 'a' &#125;</code>
+									<li>In DRC, the syntax is as follows:</li>
+									<code className="example drc" >&#123; &#60;a, b, c&#62; | &#60;a, b, c&#62; in R ∧ a &lt; 7 ⇒ b = 'a' &#125;</code>
+								</ul>
 								<p>
-									In this example, if tuples in which column <strong>a</strong> is less than 7, that means that 
-									column <strong>b</strong> of those tuples must be equal to 'a' for them to appear on the resulting relation.
+									In this example, if registers in which column <strong>a</strong> is less than 7, that means that 
+									column <strong>b</strong> of those registers must be equal to 'a' for them to appear on the resulting relation.
 								</p>
 							</div>
 
+							<h4 id="rc-iff">biconditional</h4>
 							<div>
-								<h4 id="trc-iff">biconditional</h4>
 								<p>
 									The logical biconditional operator (<strong>⇔</strong>) is used to ensure equivalence, meaning that if
 									one of the conditions is true, the other one is also true. If one of them is false, the other one must also be false.
 								</p>
-								<code className="example trc" >&#123; t | t(R) ∧ t.a &gt; 4 ⇔ t.b = 'a' &#125;</code>
+								<ul>
+									<li>In TRC, the syntax is as follows:</li>
+									<code className="example trc" >&#123; t | R(t) ∧ t.a &gt; 4 ⇔ t.b = 'a' &#125;</code>
+									<li>In DRC, the syntax is as follows:</li>
+									<code className="example drc" >&#123; &#60;a, b, c&#62; | &#60;a, b, c&#62; in R ∧ a &gt; 4 ⇔ b = 'a' &#125;</code>
+								</ul>
 								<p>
-									In this example, tuples in which column <strong>a</strong> is greater than 4 
+									In this example, registers in which column <strong>a</strong> is greater than 4 
 									and column <strong>b</strong> is equal to <strong>'a'</strong>, and the ones
 									in which column <strong>a</strong> is not greater than 4 and column <strong>b</strong> is 
 									not equal to <strong>'a'</strong> will appear in the resulting relation.
 								</p>
 							</div>
 
-							<h3 id="trc-quantifiers">Quantifiers</h3>
+							<h3 id="rc-quantifiers">Quantifiers</h3>
 							<p>
-								Quantifiers are another building block of TRC queries as they are used to express logical quantification, 
+								Quantifiers are another building block of RC queries as they are used to express logical quantification, 
 								namely existential and universal quantification.
 							</p>
 
+							<h4 id="rc-exists">existential</h4>
 							<div>
-								<h4 id="trc-exists">existential</h4>
 								<p>
 									The existential quantifier (<strong>∃</strong>) is used to define a new scope in which there should be at least one 
-									tuple that satisfies a certain condition.
+									register that satisfies a certain condition.
 								</p>
-								<code className="example trc" >&#123; t | R(t) ∧ ∃s(S(s) ∧ t.a &gt; 3 ∧ s.d &gt; 300) &#125;</code>
-
+								<ul>
+									<li>In TRC, the syntax is as follows:</li>
+									<code className="example trc" >&#123; t | R(t) ∧ ∃s(S(s) ∧ t.a &gt; 3 ∧ s.d &gt; 300) &#125;</code>
+									<li>In DRC, the syntax is as follows:</li>
+									<code className="example drc" >&#123; &#60;a, b, c&#62; | &#60;a, b, c&#62; ∈ R ∧ ∃b, d(&#60;b, d&#62; in S ∧ a &gt; 3 ∧ d &gt; 300) &#125;</code>
+								</ul>
 								<p>
-									In this example, besides the tuple variable <strong>t</strong> belonging to <strong>R</strong> and 
-									its column <strong>a</strong> being greater than 3, there should also exist at least a tuple
+									In this example, besides the tuple variable <strong>t</strong> or the domain variables 
+									<strong> &#60;a, b, c&#62; </strong> belonging to <strong>R</strong> and 
+									its column <strong>a</strong> being greater than 3, there should also exist at least a tuple or a set of domain variables
 									in relation <strong>S</strong> where 
 									its column <strong>d</strong> is greater than 3.
 								</p>
 							</div>
 
+							<h4 id="rc-forall">universal</h4>
 							<div>
-								<h4 id="trc-forall">universal</h4>
 								<p>
 									The universal quantifier (<strong>∀</strong>) is used to define a new scope in which a certain condition
 									should be true for all tuples of a given relation.
 								</p>
-								<code className="example trc" >&#123; t | R(t) and ∀s(S(s) and s.d &gt; 300) &#125;</code>
-
+								<ul>
+									<li>In TRC, the syntax is as follows:</li>
+									<code className="example trc" >&#123; t | R(t) and ∀s(S(s) and s.d &gt; 300) &#125;</code>
+									<li>In DRC, the syntax is as follows:</li>
+									<code className="example drc" >&#123; &#60;a, b, c&#62; | &#60;a, b, c&#62; ∈ R ∧ ∀b, d(&#60;b, d&#62; in S ∧ d &gt; 300) &#125;</code>
+								</ul>
 								<p>
-									In this example, besides the tuple variable <strong>t</strong> belonging to <strong>R</strong>,
-									all tuples in relation <strong>S</strong> should also be greater than 300.
+									In this example, besides the tuple variable <strong>t</strong> or the domain variables <strong> &#60;a, b, c&#62; </strong> belonging to <strong>R</strong>,
+									all tuples or a set of domain variables in relation <strong>S</strong> should also be greater than 300.
 								</p>
 							</div>
 
@@ -3030,8 +3138,8 @@ export class Help extends React.Component<Props> {
 							<div className="scroll-x"><table className="table table-condensed">
 								<thead>
 									<tr>
-										<th>classNameical notation</th>
-										<th>alternative notation</th>
+										<th>Nameical notation</th>
+										<th>Alternative notation</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -3087,31 +3195,76 @@ export class Help extends React.Component<Props> {
 							</table>
 							</div>
 
-							<h2 id="trc-limits">Limitations</h2>
-							<p>The current implementation has some limitations that should be observed</p>
+							<h3 id="rc-limits">Limitations</h3>
+							<div>
+								
+								<p>The current implementation has some limitations that should be observed</p>
 
-							<h3>No variable interpolation</h3>
-							<p>
-								In the current implementation, each tuple variable must belong to one, and only one relation,
-							 	there's no support for assigning multiple relations to the same variable
-							</p>
-							<code className="example trc" >&#123; t | t ∈ S &or; t ∈ T &#125;</code>
-							<p>
-								The previous example is not supported, as we try assigning the variable <strong>t</strong> 
-								to <strong>S</strong> and <strong>T</strong> at the same time!
-							</p>
+								<p>In TRC, those are:</p>
 
-							<h3>No implicit variables</h3>
-							<p>
-								The current implementation also doesn't support implicit variables, meaning that for each tuple variable used,
-								there must be a relation assigment to it
-							</p>
+								<ul>
+									<li>No variable interpolation</li>
+									<p>
+										In the current implementation, each tuple variable must belong to one, and only one relation,
+										there's no support for assigning multiple relations to the same variable
+									</p>
+									<code className="example trc" >&#123; t | t ∈ S &or; t ∈ T &#125;</code>
+									<p>
+										The previous example is not supported, as we try assigning the variable <strong>t</strong> 
+										to <strong>S</strong> and <strong>T</strong> at the same time!
+									</p>
 
-							<code className="example trc" >&#123; t | ∃p ∈ S (t.b = p.b) &#125;</code>
-							<p>The previous example is incorrect, as we don't assign <strong>t</strong> to any relation whatsoever</p>
+									<li>No implicit variables</li>
+									<p>
+										The current implementation also doesn't support implicit variables, meaning that for each tuple variable used,
+										there must be a relation assigment to it
+									</p>
+									<code className="example trc" >&#123; t | ∃p ∈ S (t.b = p.b) &#125;</code>
+									<p>The previous example is incorrect, as we don't assign <strong>t</strong> to any relation whatsoever</p>
 
-							<h3>No outer joins</h3>
-							<p>The current implementation also have no support for outer joins, either left, right or full outer joins are not yet available</p>
+									<li>No implicit variables</li>
+									<p>
+										The current implementation also doesn't support implicit variables, meaning that for each tuple variable used,
+										there must be a relation assigment to it
+									</p>
+									<code className="example trc" >&#123; t | ∃p ∈ S (t.b = p.b) &#125;</code>
+									<p>The previous example is incorrect, as we don't assign <strong>t</strong> to any relation whatsoever</p>
+
+									<li>No outer joins</li>
+									<p>The current implementation also have no support for outer joins, either left, right or full outer joins are not yet available</p>
+								</ul>
+
+								<p>In DRC, although some of the limitations are similar to the TRC, they got some differences:</p>
+
+								<ul>
+									<li>No variable interpolation</li>
+									<p>
+										In the current implementation, there has been an attempt to implement this in DRC, but due to time and complexity, 
+										it was put on hold due to decision of set operations (specifically the difference operation).
+									</p>
+									<code className="example drc" >&#123; &#60;r, s&#62; | &#60;r, s&#62; ∈ S ∧ &#60;r, s&#62; ∈ T &#125;</code>
+									<p>
+										The previous example is not supported, it would result in a union operation between <strong>S</strong> and <strong>T</strong> 
+										as long both relations are equivalent in number of attributes.
+									</p>
+
+									<li>No aggregate functions</li>
+									<p>The current implementation does not support aggregate functions, such as <i>count()</i> and <i>avg()</i></p>
+
+									<li>No constant in Relational Predicate</li>
+									<p>
+										In the current implementation, there is no way to include domain constant.
+									</p>
+									<code className='example drc'>&#123; &#60;r&#62; | &#60;r, 100&#62; ∈ S &#125;</code>
+									<p>
+										The previous example will cause error because it recognize only domain variables. 
+										This query would use the constant 100 to locate registers in S that would have this value in the second column.
+									</p>
+
+									<li>No outer joins</li>
+									<p>The current implementation also have no support for outer joins, either left, right or full outer joins are not yet available</p>
+								</ul>
+							</div>
 
 							<h2 id="license-help">Licence</h2>
 							<p>
@@ -3124,10 +3277,11 @@ export class Help extends React.Component<Props> {
 								</a><br />
 								This document by Johannes Kessler is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 							</p>
+							
 						</div>
 					</div>
 				</div>
-				</div>
+			</div>
 		);
 	}
 }
