@@ -58,6 +58,8 @@ interface RelationPredicateWithLogicalExpression { relationPredicate: drcAst.Rel
 
 export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations: { [key: string]: Relation }): RANode 
 {
+	const setOperationsEnabled = false;
+
 	const warnings: {msg: string, codeInfo: CodeInfo}[] = [];
 
 	function recValueExpr(n: relalgAst.valueExpr | sqlAst.valueExpr): ValueExpr.ValueExpr {
@@ -394,6 +396,11 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 		getRelationPredicateRec(root, domainVar);
 
+		// NOTE: if more than one relationPredicate was encountered
+		if (relationPredicates.length > 1 && !setOperationsEnabled) {
+			throw new Error('Cannot define RelationPredicate more than once per scope!')
+		}
+
 		return relationPredicates;
 	}
 
@@ -532,7 +539,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 		var currentCluster = [...filteredClustersSet[scope] || []];
 		
-		if (currentCluster.length !== 0) {
+		if (currentCluster.length !== 0 && setOperationsEnabled) {
 			return getResultingSet(currentCluster);
 		}
 
@@ -632,7 +639,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 						var currentCluster = [...filteredClustersSet[scope] || []];
 						var newBaseRel = baseRel;
 		
-						if (currentCluster.length !== 0) {
+						if (currentCluster.length !== 0 && setOperationsEnabled) {
 							newBaseRel = getResultingSet(currentCluster);
 							newBaseRel = new CrossJoin(newBaseRel, baseRel);
 						}
