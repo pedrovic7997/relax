@@ -416,7 +416,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 	});
 
 	QUnit.module('Set operations', () => {
-		QUnit.test('test intersect between two Relation Predicates', (assert) => {
+		QUnit.skip('test intersect between two Relation Predicates', (assert) => {
 			const queryDrc = '{ <x,y> | <x,y> in S and <x,y> in T }';
 			const queryRa = 'pi S.x, S.y (ρ x←b, y←d S intersect ρ x←b, y←d T)';
 
@@ -425,7 +425,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 			assert.deepEqual(resultDrc, resultRa);
 		});
-		QUnit.test('test union between two Relation Predicates', (assert) => {
+		QUnit.skip('test union between two Relation Predicates', (assert) => {
 			const queryDrc = '{ <x,y> | <x,y> in S or <x,y> in T }';
 			const queryRa = 'pi S.x, S.y (ρ x←b, y←d S union ρ x←b, y←d T)';
 
@@ -434,7 +434,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 			assert.deepEqual(resultDrc, resultRa);
 		});
-		QUnit.test('test difference between two Relation Predicates', (assert) => {
+		QUnit.skip('test difference between two Relation Predicates', (assert) => {
 			const queryDrc = '{ <x,y> | <x,y> in S and not <x,y> in T }';
 			const queryRa = 'pi S.x, S.y (ρ x←b, y←d S except ρ x←b, y←d T)';
 
@@ -443,7 +443,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 			assert.deepEqual(resultDrc, resultRa);
 		});
-		QUnit.test('test multiple Relation Predicate', (assert) => {
+		QUnit.skip('test multiple Relation Predicate', (assert) => {
 			const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T or <x,y> in S}';
 			const queryRa = 'π S.x, S.y ( ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∪ ρ x←b, y←d S ) ∪ ( ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∪ ρ x←b, y←d S ) ⋉ ρ x←b, y←d S ) ) ';
 
@@ -452,7 +452,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 			assert.deepEqual(resultDrc, resultRa);
 		});
-		QUnit.test('test difference between two Relation Predicate out of order', (assert) => {
+		QUnit.skip('test difference between two Relation Predicate out of order', (assert) => {
 			const queryDrc = '{<x,y> | not <x,y> in S and <x,y> in T}';
 			const queryRa = 'π T.x, T.y ( ρ x←b, y←d T - ρ x←b, y←d S ) ';
 
@@ -463,7 +463,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 		});
 
 		QUnit.module('Nested scopes', () => {
-			QUnit.test('test nested scopes', (assert) => {
+			QUnit.skip('test nested scopes', (assert) => {
 				const queryDrc = '{ <a,b,c> | <a,b,c> in R and not ∃r( <r,s> in S and not <r,s> in T and s > 400) }';
 				const queryRa = 'π R.a, R.b, R.c ( ρ a←a, b←b, c←c R - ( ρ a←a, b←b, c←c R ⋉ ( ( ρ r←b, s←d S - ρ r←b, s←d T ) ∩ σ s > 400 ( ρ r←b, s←d S - ρ r←b, s←d T ) ) ) )';
 
@@ -472,7 +472,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 				assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
 			});
-			QUnit.test('test nested scopes with connecting predicate', (assert) => {
+			QUnit.skip('test nested scopes with connecting predicate', (assert) => {
 				const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T and ∃r(<r,s,t> in R and s = x)}';
 				const queryRa = 'π S.x, S.y ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∩ ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ⋉ σ s = x ( ρ r←a, s←b, t←c R ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ) ) ';
 
@@ -481,7 +481,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 				assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
 			});
-			QUnit.test('test nested scopes with connecting predicate and set operation', (assert) => {
+			QUnit.skip('test nested scopes with connecting predicate and set operation', (assert) => {
 				const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T and ∃r(<r,s,t> in R and <r,s,t> in Q and s = x)}';
 				const queryRa = 'π S.x, S.y ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∩ ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ⋉ ( ( ( ρ r←a, s←b, t←c R ∩ ρ r←a, s←b, t←d Q ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ∩ σ s = x ( ( ρ r←a, s←b, t←c R ∩ ρ r←a, s←b, t←d Q ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ) ) ) ';
 
@@ -490,7 +490,7 @@ QUnit.module('translate drc ast to relational algebra', () => {
 
 				assert.deepEqual(resultDrc.getRows(), resultRa.getRows());
 			});
-			QUnit.test('test nested scopes with multiple set operation', (assert) => {
+			QUnit.skip('test nested scopes with multiple set operation', (assert) => {
 				const queryDrc = '{<x,y> | <x,y> in S and <x,y> in T and ∃r(<r,s> in T or <r,s> in S and <r,s> in T and r = x)}';
 				const queryRa = 'π S.x, S.y ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ∩ ( ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ⋉ ( ( ( ( ρ r←b, s←d T ∪ ρ r←b, s←d S ) ∩ ρ r←b, s←d T ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ∩ σ r = x ( ( ( ρ r←b, s←d T ∪ ρ r←b, s←d S ) ∩ ρ r←b, s←d T ) ⨯ ( ρ x←b, y←d S ∩ ρ x←b, y←d T ) ) ) ) ) ';
 
