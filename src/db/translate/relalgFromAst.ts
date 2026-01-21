@@ -225,7 +225,12 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 		const relationWithUndeclaredVariable = relationPredicates.find((relation: drcAst.RelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
 			
 		if (relationWithUndeclaredVariable) {
-			warnings.push({msg: i18n.t('db.messages.translate.error-drc-undeclared-variables', { variables: relationWithUndeclaredVariable.variables.join(",") , relation: relationWithUndeclaredVariable.relation }), codeInfo: relationWithUndeclaredVariable.codeInfo});
+			if (setOperationsEnabled) {
+				warnings.push({msg: i18n.t('db.messages.translate.error-drc-undeclared-variables', { variables: relationWithUndeclaredVariable.variables.join(",") , relation: relationWithUndeclaredVariable.relation }), codeInfo: relationWithUndeclaredVariable.codeInfo});
+			}
+			else {
+				throw new ExecutionError(i18n.t('db.messages.translate.error-drc-undeclared-variables', { variables: relationWithUndeclaredVariable.variables.join(",") , relation: relationWithUndeclaredVariable.relation }), relationWithUndeclaredVariable.codeInfo);
+			}
 		}
 
 		while (quantifiedExpressions.length > 0) {
@@ -237,7 +242,12 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 			const relationWithUndeclaredVariable = relationPredicates.find((relation: drcAst.RelationPredicate) => relation.variables.every(v => !domainVariables?.includes(v)))
 			
 			if (relationWithUndeclaredVariable) {
-				warnings.push({msg: i18n.t('db.messages.translate.error-drc-undeclared-variables', { variables: relationWithUndeclaredVariable.variables.join(",") , relation: relationWithUndeclaredVariable.relation }), codeInfo: relationWithUndeclaredVariable.codeInfo});
+				if (setOperationsEnabled) {
+					warnings.push({msg: i18n.t('db.messages.translate.error-drc-undeclared-variables', { variables: relationWithUndeclaredVariable.variables.join(",") , relation: relationWithUndeclaredVariable.relation }), codeInfo: relationWithUndeclaredVariable.codeInfo});
+				}
+				else {
+					throw new ExecutionError(i18n.t('db.messages.translate.error-drc-undeclared-variables', { variables: relationWithUndeclaredVariable.variables.join(",") , relation: relationWithUndeclaredVariable.relation }), relationWithUndeclaredVariable.codeInfo);
+				}
 			}
 		}
 	}
