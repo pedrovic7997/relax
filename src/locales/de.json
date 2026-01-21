@@ -53,6 +53,8 @@
 	"db.messages.translate.error-drc-relation-match-not-found": "Es war nicht möglich, die passende Relation zu finden für: {{relation}}",
 	"db.messages.translate.error-drc-domain-variable-count-mismatch": "Anzahl der Variablen im Relationsprädikat stimmt nicht mit der Anzahl der Spalten in der Relation überein.",
 	"db.messages.translate.error-drc-domain-variable-must-be-declared": "Domänenvariable muss in einem nicht-negierten Relationsprädikat deklariert werden!",
+	"db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe": "Relationsprädikat \"{{relation}}({{variable}})\" kann nicht negiert werden (unsichere Formel)",
+  	"db.messages.translate.error-drc-base-relation-null": "Basisrelation ist null!",
 	"calc.editors.trc.toolbar.expression": "Abfrageausdruck",
 	"calc.editors.trc.toolbar.expression-content": "<b>{</b> t <b>|</b> COND(t) <b>}</b>",
 	"calc.editors.trc.toolbar.membership": "Beziehungsgliedschaft",

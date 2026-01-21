@@ -812,7 +812,12 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 			case 'Negation': {
 				if (nRaw.formula.type === 'RelationPredicate' && filteredClustersSet.every(c => c.every(rp => rp.relationPredicate !== nRaw.formula))) {
-					throw new ExecutionError(i18n.t('db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe'));
+					throw new ExecutionError(i18n.t('db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe',
+						{ 
+							relation: nRaw.formula.relation,
+							variable: nRaw.formula.variables.join(",") 
+						}),
+						nRaw.codeInfo);
 				}
 				return rec(nRaw.formula, baseRel, !negated)
 			}

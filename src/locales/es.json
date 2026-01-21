@@ -53,6 +53,8 @@
 	"db.messages.translate.error-drc-relation-match-not-found": "No fue posible encontrar la relación para: {{relation}}",
 	"db.messages.translate.error-drc-domain-variable-count-mismatch": "El número de variables de dominio en el predicado relacional no coincide con el número de columnas en la relación.",
 	"db.messages.translate.error-drc-domain-variable-must-be-declared": "¡La variable de dominio debe ser declarada en algún predicado relacional no negado!",
+	"db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe": "no se puede negar el predicado de relación \"{{relation}}({{variable}})\" (fórmula insegura)",
+  	"db.messages.translate.error-drc-base-relation-null": "¡La relación base es nula!",
 	"calc.editors.trc.toolbar.expression": "expresión de consulta",
 	"calc.editors.trc.toolbar.expression-content": "<b>{</b> t <b>|</b> COND(t) <b>}</b>",
 	"calc.editors.trc.toolbar.membership": "pertenencia a una relación",
