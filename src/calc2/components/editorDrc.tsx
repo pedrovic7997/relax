@@ -60,13 +60,9 @@ export class EditorDrc extends React.Component<Props, State> {
 				execFunction={(self: EditorBase, text: string, offset) => {
 					self.historyAddEntry(text);
 
-					console.log('TEXT SQL: ', text)
-
 					const ast = parseDRCSelect(text);
 
-					console.log('PARSED DRC AST: ', ast)
-
-					const root = relalgFromDRCAstRoot(ast, relations)
+					const root = relalgFromDRCAstRoot(ast, relations);
 
 					const warnings = root.getWarnings(true).map(x => x.message);
 					const warningsStr = warnings.join('\n')
@@ -91,9 +87,9 @@ export class EditorDrc extends React.Component<Props, State> {
 				}}
 				tab="drc"
 				linterFunction={(self: EditorBase, editor: CodeMirror.Editor, text: string) => {
-					// TODO: implement proper linter function, for now it just tries to
-					// parse the text and shows the error if it fails on the editor!
-					const trcAst = parseDRCSelect(text)
+					const ast = parseDRCSelect(text);
+					const root = relalgFromDRCAstRoot(ast, relations);
+					root.check();
 
 					// replace text (text-magic)
 					if (editor.getDoc().somethingSelected() === false) {
