@@ -238,5 +238,6 @@
 	"db.messages.translate.error-drc-domain-variable-count-mismatch": "Il numero di variabili di dominio nel predicato relazionale non corrisponde al numero di colonne nella relazione.",
 	"db.messages.translate.error-drc-domain-variable-must-be-declared": "La variabile di dominio deve essere dichiarata in qualche predicato relazionale non negato!",
 	"db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe": "impossibile negare il predicato di relazione \"{{relation}}({{variable}})\" (formula non sicura)",
-  	"db.messages.translate.error-drc-base-relation-null": "La relazione di base è nulla!"
+  	"db.messages.translate.error-drc-base-relation-null": "La relazione di base è nulla!",
+	"db.messages.translate.error-drc-multiple-definition-variable": "Non è possibile definire RelationPredicate più di una volta per ambito!"
 }

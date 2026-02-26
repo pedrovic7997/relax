@@ -55,6 +55,7 @@
 	"db.messages.translate.error-drc-domain-variable-must-be-declared": "Domain variable must be declared in some non-negated Relation predicate!",
 	"db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe": "cannot negate relation predicate \"{{relation}}({{variable}})\" (unsafe formula) ", 
 	"db.messages.translate.error-drc-base-relation-null": "Base relation is null!",
+	"db.messages.translate.error-drc-multiple-definition-variable": "Cannot define RelationPredicate more than once per scope!",
 	"calc.editors.trc.toolbar.expression": "query expression",
 	"calc.editors.trc.toolbar.expression-content": "<b>{</b> t <b>|</b> COND(t) <b>}</b>",
 	"calc.editors.trc.toolbar.membership": "relation membership",

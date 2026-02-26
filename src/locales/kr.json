@@ -59,6 +59,7 @@
 	"db.messages.translate.error-drc-domain-variable-must-be-declared": "도메인 변수는 부정되지 않은 관계 술어에서 선언되어야 합니다!",
 	"db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe": "관계 조건자 \"{{relation}}({{variable}})\"를 부정할 수 없습니다 (안전하지 않은 수식)",
   	"db.messages.translate.error-drc-base-relation-null": "기본 관계가 null입니다!",
+	"db.messages.translate.error-drc-multiple-definition-variable": "RelationPredicate는 하나의 범위에서 두 번 이상 정의할 수 없습니다!",
 	"calc.editors.trc.toolbar.expression": "쿼리 표현식",
 	"calc.editors.trc.toolbar.expression-content": "<b>{</b> t <b>|</b> COND(t) <b>}</b>",
 	"calc.editors.trc.toolbar.membership": "관계 멤버십",

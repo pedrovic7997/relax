@@ -59,6 +59,7 @@
 	"db.messages.translate.error-drc-domain-variable-must-be-declared": "A variável de domínio deve ser declarada em algum predicado relacional não negado!",
 	"db.messages.translate.error-drc-cannot-negate-relation-predicate-unsafe": "não é possível negar o predicado de relação \"{{relation}}({{variable}})\" (fórmula insegura)",
   	"db.messages.translate.error-drc-base-relation-null": "A relação base é nula!",
+	"db.messages.translate.error-drc-multiple-definition-variable": "Não é possível definir RelationPredicate mais de uma vez por escopo!",
 	"calc.editors.trc.toolbar.expression": "expressão trc",
 	"calc.editors.trc.toolbar.expression-content": "<b>{</b> t <b>|</b> COND(t) <b>}</b>",
 	"calc.editors.trc.toolbar.membership": "membro de relação",

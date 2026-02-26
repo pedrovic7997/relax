@@ -408,7 +408,7 @@ export function relalgFromDRCAstRoot(astRoot: drcAst.DRC_Expr | null, relations:
 
 		// NOTE: if more than one relationPredicate was encountered
 		if (relationPredicates.length > 1 && !setOperationsEnabled) {
-			throw new Error('Cannot define RelationPredicate more than once per scope!')
+			throw new ExecutionError(i18n.t('db.messages.translate.error-drc-multiple-definition-variable'))
 		}
 
 		return relationPredicates;
